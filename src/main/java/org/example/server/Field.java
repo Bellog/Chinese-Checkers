@@ -1,4 +1,4 @@
-package org.example.connection;
+package org.example.server;
 
 public class Field {
 

@@ -44,7 +44,10 @@ public class Packet implements Serializable {
      * List of possible code Packet class can be used to send
      */
     public enum Codes implements Serializable {
-        WRONG_PLAYER,
+        INFO,
+        PLAYER_INFO,
+        OPPONENT_TURN,
+        PLAYER_TURN,
         WRONG_ACTION,
         ACTION_SUCCESS,
         ACTION_FAILURE,

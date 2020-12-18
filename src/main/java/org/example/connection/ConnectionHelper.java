@@ -23,11 +23,10 @@ public class ConnectionHelper implements Serializable {
      *
      * @param message message to send, see this class' documentation for more information
      */
-    ConnectionHelper(Message message, String version) {
+    public ConnectionHelper(Message message, String version) {
         this.message = message;
         this.version = version;
     }
-
 
     /**
      * Possible uses
@@ -35,7 +34,7 @@ public class ConnectionHelper implements Serializable {
     public enum Message implements Serializable {
         VERSION_MATCH, //sent to client after connection is established
         VERSION_MISMATCH, //sent to client after connection is established
-        REQUEST_RESPONE, //used by client ot start connection
+        REQUEST_RESPONSE, //used by client ot start connection
         STREAM_START //used by server to start connection
     }
 }

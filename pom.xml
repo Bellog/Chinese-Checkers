@@ -42,7 +42,7 @@
                         <version>1.6.0</version>
                         <configuration>
                             <!--MAIN CLASS IS HERE-->
-                            <mainClass>org.example.connection.Client</mainClass>
+                            <mainClass>org.example.client.Client</mainClass>
                         </configuration>
                     </plugin>
                 </plugins>
@@ -58,7 +58,7 @@
                         <version>1.6.0</version>
                         <configuration>
                             <!--MAIN CLASS IS HERE-->
-                            <mainClass>org.example.connection.Server</mainClass>
+                            <mainClass>org.example.server.Server</mainClass>
                         </configuration>
                     </plugin>
                 </plugins>
