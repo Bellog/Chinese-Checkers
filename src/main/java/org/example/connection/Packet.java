@@ -1,5 +1,6 @@
 package org.example.connection;
 
+import java.io.Serial;
 import java.io.Serializable;
 
 /**
@@ -16,12 +17,16 @@ public class Packet implements Serializable {
     private final String text;
     private final Integer value;
     private final String message;
+    private final Position start;
+    private final Position end;
 
     private Packet(PacketBuilder builder) {
         code = builder.code;
         text = builder.text;
         value = builder.value;
         message = builder.message;
+        start = builder.start;
+        end = builder.end;
     }
 
     public Codes getCode() {
@@ -39,6 +44,10 @@ public class Packet implements Serializable {
     public Integer getValue() {
         return value;
     }
+
+    public Position getStart() { return start; }
+
+    public Position getEnd() { return end; }
 
     /**
      * List of possible code Packet class can be used to send
@@ -63,6 +72,18 @@ public class Packet implements Serializable {
         private static final long serialVersionUID = 1002L;
     }
 
+    public static class Position implements Serializable {
+        private static final long serialVersionUID = 1003L;
+
+        public final int x;
+        public final int y;
+
+        public Position (int x, int y) {
+            this.x = x;
+            this.y = y;
+        }
+    }
+
     /*
         Alternatywnie może być kreator na podstawie kodów - np.: dla info jedynym parametrem jest text, dla innego więcej
      */
@@ -71,6 +92,8 @@ public class Packet implements Serializable {
         private String text = null;
         private String message = null;
         private Integer value = null;
+        private Position start = null;
+        private Position end = null;
 
         public PacketBuilder code(Codes code) {
             this.code = code;
@@ -89,6 +112,16 @@ public class Packet implements Serializable {
 
         public PacketBuilder message(String message) {
             this.message = message;
+            return this;
+        }
+
+        public PacketBuilder start(Position start) {
+            this.start = start;
+            return this;
+        }
+
+        public PacketBuilder end(Position end) {
+            this.end = end;
             return this;
         }
 

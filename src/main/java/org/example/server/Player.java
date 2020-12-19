@@ -13,26 +13,24 @@ public class Player {
     private final AtomicReference<ObjectInputStream> input = new AtomicReference<>();
     private final AtomicReference<ObjectOutputStream> output = new AtomicReference<>();
     private final Socket socket;
-    private final Game game;
-    private final int i;
+    private final GameHandler gameHandler;
 
-    public Player(Socket socket, Game game, int i) throws IOException {
-        this.i = i;
-        this.game = game;
+    public Player(Socket socket, GameHandler gameHandler) throws IOException {
+        this.gameHandler = gameHandler;
         this.socket = socket;
 
         try {
             //first exchange is required as objectInputStream cannot be initialized on an empty stream
             output.set(new ObjectOutputStream(this.socket.getOutputStream()));
-            output.get().writeUnshared(new ConnectionHelper(ConnectionHelper.Message.STREAM_START, game.getGameVersion()));
+            output.get().writeUnshared(new ConnectionHelper(ConnectionHelper.Message.STREAM_START, gameHandler.getGameVersion()));
             input.set(new ObjectInputStream(this.socket.getInputStream()));
             ConnectionHelper c = (ConnectionHelper) input.get().readUnshared();
-            if (c.message == ConnectionHelper.Message.REQUEST_RESPONSE && c.version.equals(game.getGameVersion())) {
+            if (c.message == ConnectionHelper.Message.REQUEST_RESPONSE && c.version.equals(gameHandler.getGameVersion())) {
                 output.get().reset();
-                output.get().writeUnshared(new ConnectionHelper(ConnectionHelper.Message.VERSION_MATCH, game.getGameVersion()));
+                output.get().writeUnshared(new ConnectionHelper(ConnectionHelper.Message.VERSION_MATCH, gameHandler.getGameVersion()));
             } else {
                 output.get().reset();
-                output.get().writeUnshared(new ConnectionHelper(ConnectionHelper.Message.VERSION_MISMATCH, game.getGameVersion()));
+                output.get().writeUnshared(new ConnectionHelper(ConnectionHelper.Message.VERSION_MISMATCH, gameHandler.getGameVersion()));
                 input.get().close();
                 output.get().close();
                 socket.close();
@@ -50,14 +48,14 @@ public class Player {
             try {
                 Packet packet = (Packet) input.get().readUnshared();
                 switch (packet.getCode()) {
-                    case BOARD_UPDATE, PLAYER_MOVE -> game.handleInput(this, packet);
+                    case BOARD_UPDATE, PLAYER_MOVE -> gameHandler.handleInput(this, packet);
                     case PLAYER_INFO -> send(new Packet.PacketBuilder().code(Packet.Codes.PLAYER_INFO)
-                            .message("You are " + game.getMark(this)).build());
+                            .message("You are " + gameHandler.getMark(this)).build());
                     default -> send(new Packet.PacketBuilder().code(Packet.Codes.WRONG_ACTION).build());
                 }
             } catch (IOException | ClassNotFoundException | ClassCastException e) {
-                System.out.println("Lost connection to player " + game.getMark(this) + " (input)");
-                game.removePlayer(this);
+                System.out.println("Lost connection to player " + gameHandler.getMark(this) + " (input)");
+                gameHandler.removePlayer(this);
                 return;
             }
         }
@@ -68,9 +66,7 @@ public class Player {
             output.get().reset();
             output.get().writeUnshared(packet);
         } catch (IOException e) {
-            System.out.println("player " + i);
-            e.printStackTrace();
-            System.out.println("Lost connection to player" + game.getMark(this) + " (output)");
+            System.out.println("Lost connection to player" + gameHandler.getMark(this) + " (output)");
         }
     }
 }

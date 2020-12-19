@@ -92,8 +92,9 @@ public class Client {
             var text = cli.next();
             try {
                 int i = Integer.parseInt(text);
+                int j = Integer.parseInt(cli.next());
                 output.get().reset();
-                output.get().writeUnshared(new Packet.PacketBuilder().code(Packet.Codes.PLAYER_MOVE).value(i).build());
+                output.get().writeUnshared(new Packet.PacketBuilder().code(Packet.Codes.PLAYER_MOVE).end(new Packet.Position(i, j)).build());
             } catch (NumberFormatException e) {
                 switch (text) {
                     case "exit" -> System.exit(21);

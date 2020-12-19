@@ -12,7 +12,7 @@ import java.util.concurrent.atomic.AtomicReference;
 public class Server {
 
     private final AtomicReference<ServerSocket> serverSocket = new AtomicReference<>();
-    private final Game game;
+    private final GameHandler gameHandler;
     /**
      * Maximum time server will wait for find a new player, in seconds.
      */
@@ -51,13 +51,13 @@ public class Server {
             System.out.println("Failed to create server");
             System.exit(4);
         }
-        game = new Game(version, this);
+        gameHandler = new GameHandler(version, this, new Game());
 
         int currentPlayers = 0;
-        while (currentPlayers < game.getMaxPlayers()) {
-            System.out.println("looking for " + (game.getMaxPlayers() - currentPlayers) + " more players");
+        while (currentPlayers < gameHandler.getGame().getNumberOfPlayers()) {
+            System.out.println("looking for " + (gameHandler.getGame().getNumberOfPlayers() - currentPlayers) + " more players");
             try {
-                game.addPlayer(new Player(serverSocket.get().accept(), game, i++));
+                gameHandler.addPlayer(new Player(serverSocket.get().accept(), gameHandler));
                 currentPlayers++;
             } catch (IOException e) {
                 e.printStackTrace();
@@ -73,7 +73,7 @@ public class Server {
     public synchronized boolean getNewPlayer() {
         System.out.println("looking for a player");
         try {
-            game.addPlayer(new Player(serverSocket.get().accept(), game, i++));
+            gameHandler.addPlayer(new Player(serverSocket.get().accept(), gameHandler));
             System.out.println("Player found!");
             return true;
         } catch (IOException e) {
