@@ -1,33 +1,39 @@
 package org.example.client;
 
-import org.apache.maven.model.Model;
-import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
-import org.example.connection.ConnectionHelper;
-import org.example.connection.Packet;
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.util.ArrayList;
+import java.util.List;
 
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.net.InetSocketAddress;
-import java.net.Socket;
-import java.util.Scanner;
-import java.util.concurrent.atomic.AtomicReference;
+public class Client extends JFrame {
 
-public class Client {
-
-    private final AtomicReference<ObjectInputStream> input = new AtomicReference<>();
-    private final AtomicReference<ObjectOutputStream> output = new AtomicReference<>();
-    private final Socket socket;
+    private final List<Field> board = new ArrayList<>();
+    private final ClientConnection conn;
 
     public Client() {
-        socket = new Socket();
-        new Thread(() -> {
-            try {
-                setupConnection();
-            } catch (Exception e) {
-                System.out.println("Lost connection with the server closing program");
-                System.exit(0);
+        super("Sternhalma");
+        setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+        setPreferredSize(new Dimension(800, 800));
+        getContentPane().setBackground(Color.WHITE);
+        getContentPane().setLayout(new GridLayout(4, 4));
+
+        try {
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+        } catch (IllegalAccessException | InstantiationException | UnsupportedLookAndFeelException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+
+        setupBoard();
+
+        conn = new ClientConnection(this);
+
+        new Timer(100, event -> {
+            if (conn.isInitialized()) {
+                setVisible(true);
+                ((Timer) event.getSource()).stop();
             }
         }).start();
     }
@@ -37,106 +43,33 @@ public class Client {
         new Client();
     }
 
-    private void setupConnection() throws Exception {
-        MavenXpp3Reader reader = new MavenXpp3Reader();
-        Model model = reader.read(new FileReader("pom.xml"));
-        String version = model.getVersion();
-
-        try {
-            socket.connect(new InetSocketAddress("localhost", ConnectionHelper.DEFAULT_PORT), 10000);
-        } catch (IOException e) {
-            System.out.println("Couldn't connect to any server");
-            return;
-        }
-
-        try {
-            //first exchange is required as objectInputStream cannot be initialized on an empty stream
-            output.set(new ObjectOutputStream(this.socket.getOutputStream()));
-            output.get().writeUnshared(new ConnectionHelper(ConnectionHelper.Message.REQUEST_RESPONSE, version));
-            input.set(new ObjectInputStream(this.socket.getInputStream()));
-            ConnectionHelper c = (ConnectionHelper) input.get().readUnshared();
-            if (c.message != ConnectionHelper.Message.STREAM_START) {
-                System.out.println("Protocol error");
-                throw new Exception();
+    private void setupBoard() {
+        MouseListener m = new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                Field field = (Field) e.getSource();
+                conn.send(board.indexOf(field));
             }
-            c = (ConnectionHelper) input.get().readUnshared();
-            if (c.message == ConnectionHelper.Message.VERSION_MISMATCH) {
-                System.out.println("Version mismatch");
-                System.out.println(version + "; " + c.version);
-                input.get().close();
-                output.get().close();
-                socket.close();
-                throw new Exception();
-            }
-        } catch (IOException | ClassNotFoundException | ClassCastException e) {
-            throw new Exception();
+        };
+
+        for (int i = 0; i < 16; i++) {
+            Field field = new Field();
+            field.addMouseListener(m);
+            board.add(field);
+            getContentPane().add(field);
         }
-        System.out.println("Found a game!");
-        new Thread(this::handleServerReceive).start();
-        new Thread(this::handleUserInput).start();
+        setSize(800, 800);
+        setLocationRelativeTo(null);
     }
 
-    private void handleUserInput() {
-        try {
-            output.get().reset();
-            output.get().writeUnshared(new Packet.PacketBuilder().code(Packet.Codes.PLAYER_INFO).build());
-
-            output.get().reset();
-            output.get().writeUnshared(new Packet.PacketBuilder().code(Packet.Codes.BOARD_UPDATE).build());
-        } catch (IOException ioException) {
-            System.out.println("connection error, closing program");
-            System.exit(20);
-        }
-        var cli = new Scanner(System.in);
-        while (!socket.isClosed() && socket.isConnected() && cli.hasNextLine()) {
-            var text = cli.next();
-            try {
-                int i = Integer.parseInt(text);
-                output.get().reset();
-                output.get().writeUnshared(new Packet.PacketBuilder().code(Packet.Codes.PLAYER_MOVE).value(i).build());
-            } catch (NumberFormatException e) {
-                switch (text) {
-                    case "exit" -> System.exit(21);
-                    case "update" -> {
-                        try {
-                            output.get().reset();
-                            output.get().writeUnshared(new Packet.PacketBuilder().code(Packet.Codes.BOARD_UPDATE).build());
-                        } catch (IOException ioException) {
-                            System.out.println("connection error, closing program");
-                            System.exit(22);
-                        }
-                    }
-                    default -> System.out.println("Incorrect input");
-                }
-            } catch (IOException e) {
-                System.out.println("connection error, closing program");
-                System.exit(23);
-            }
-        }
+    public void setPlayerInfo(String text) {
+        setTitle("Sternhalma \"" + text + "\"");
     }
 
-    private void handleServerReceive() {
-        while (socket.isConnected()) {
-            try {
-                Packet packet = (Packet) input.get().readUnshared();
-                switch (packet.getCode()) {
-                    case INFO, WRONG_ACTION, PLAYER_INFO, ACTION_FAILURE -> System.out.println(packet.getMessage());
-                    case OPPONENT_TURN -> System.out.println("It's not your turn");
-                    case PLAYER_TURN -> System.out.println("It's your turn now!");
-                    case ACTION_SUCCESS, BOARD_UPDATE -> System.out.println(packet.getBoard());
-                    case GAME_END -> {
-                        System.out.println(packet.getMessage());
-                        socket.close();
-                    }
-                    case OPPONENT_MOVE -> {
-                        System.out.println(packet.getMessage());
-                        System.out.println(packet.getBoard());
-                    }
-                }
-            } catch (IOException | ClassNotFoundException | ClassCastException e) {
-                System.out.println("connection error, closing program");
-                System.exit(30);
-            }
+    public void update(List<String> board) {
+        for (int i = 0; i < 16; i++) {
+            this.board.get(i).setMark(board.get(i));
+            this.board.get(i).repaint();
         }
     }
 }

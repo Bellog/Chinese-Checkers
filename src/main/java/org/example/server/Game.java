@@ -3,18 +3,20 @@ package org.example.server;
 import org.example.connection.Packet;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.stream.Collectors;
 
 //TODO move handler (this) to server class, requires proper implementation of handler, field and game classes first
 public class Game {
 
     private final List<Field> board = new ArrayList<>();
-    private final List<Player> players = new ArrayList<>();
-    private final List<String> marks = List.of("x", "o", "#");
+    private final List<String> marks = List.of("x", "o");
     private final int boardWidth = 4;
-    private final int maxPlayers = 3;
+    private final int maxPlayers = 2;
+    private final List<Player> players = new ArrayList<>(Collections.nCopies(maxPlayers, null));
     private final String gameVersion;
     private final Server server;
     private final ReentrantLock LOCK = new ReentrantLock();
@@ -58,14 +60,13 @@ public class Game {
     public synchronized void addPlayer(Player player) {
         LOCK.lock();
         if (players.size() == 0) current = 0;
-        for (int i = 0; i < players.size(); i++) {
+        for (int i = 0; i < maxPlayers; i++) {
             if (players.get(i) == null) {
                 players.set(i, player);
                 LOCK.unlock();
                 return;
             }
         }
-        players.add(player);
         LOCK.unlock();
     }
 
@@ -75,19 +76,8 @@ public class Game {
         return marks.get(players.indexOf(player));
     }
 
-    private String boardAsText() {
-        StringBuilder text = new StringBuilder();
-        for (var i = 0; i < boardWidth; i++) {
-            for (var j = 0; j < boardWidth; j++) {
-                text.append(board.get(i * boardWidth + j).getMark());
-                if (j < boardWidth - 1)
-                    text.append("|");
-            }
-            text.append("\n");
-            if (i < boardWidth - 1)
-                text.append("-------\n");
-        }
-        return text.toString();
+    private List<String> BoardAsList() {
+        return board.stream().map(Field::getMark).collect(Collectors.toList());
     }
 
 
@@ -95,21 +85,20 @@ public class Game {
         LOCK.lock();
         switch (packet.getCode()) {
             case BOARD_UPDATE -> sendToPlayer(player, new Packet.PacketBuilder()
-                    .code(Packet.Codes.BOARD_UPDATE).board(boardAsText()).build());
+                    .code(Packet.Codes.BOARD_UPDATE).board(BoardAsList()).build());
             case PLAYER_MOVE -> move(player, packet.getValue());
         }
         LOCK.unlock();
     }
 
     private void move(Player player, int position) {
-        System.out.println(getMark(player) + " " + players.indexOf(player));
         if (players.indexOf(player) != current) {
             sendToPlayer(player, new Packet.PacketBuilder().code(Packet.Codes.OPPONENT_TURN).build());
             return;
         }
         if (board.get(position).getMark().equals(" ")) {
             board.get(position).setMark(getMark(player));
-            if (hasWinner())
+            if (hasWinner()) {
                 for (int i = 0; i < maxPlayers; i++)
                     if (i != current)
                         sendToPlayer(players.get(i), new Packet.PacketBuilder()
@@ -117,7 +106,8 @@ public class Game {
                     else
                         sendToPlayer(players.get(i), new Packet.PacketBuilder()
                                 .code(Packet.Codes.GAME_END).message("you won!").build());
-            else if (isFilledUp()) {
+                System.exit(0);
+            } else if (isFilledUp()) {
                 for (int i = 0; i < maxPlayers; i++)
                     sendToPlayer(players.get(i), new Packet.PacketBuilder()
                             .code(Packet.Codes.GAME_END).message("Tie!").build());
@@ -125,11 +115,11 @@ public class Game {
                 for (int i = 0; i < maxPlayers; i++)
                     if (i != current)
                         sendToPlayer(players.get(i), new Packet.PacketBuilder()
-                                .code(Packet.Codes.OPPONENT_MOVE).board(boardAsText())
+                                .code(Packet.Codes.OPPONENT_MOVE).board(BoardAsList())
                                 .message("Opponent " + getMark(player) + " moved").build());
                     else
                         sendToPlayer(players.get(i), new Packet.PacketBuilder()
-                                .code(Packet.Codes.ACTION_SUCCESS).board(boardAsText()).build());
+                                .code(Packet.Codes.ACTION_SUCCESS).board(BoardAsList()).build());
         } else {
             player.send(new Packet.PacketBuilder()
                     .code(Packet.Codes.ACTION_FAILURE).message("This field is already set").build());

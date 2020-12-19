@@ -17,7 +17,6 @@ public class Server {
      * Maximum time server will wait for find a new player, in seconds.
      */
     private final int maxTimeout = 30;
-    private int i = 0;
 
     public Server() {
 
@@ -57,7 +56,7 @@ public class Server {
         while (currentPlayers < game.getMaxPlayers()) {
             System.out.println("looking for " + (game.getMaxPlayers() - currentPlayers) + " more players");
             try {
-                game.addPlayer(new Player(serverSocket.get().accept(), game, i++));
+                game.addPlayer(new Player(serverSocket.get().accept(), game));
                 currentPlayers++;
             } catch (IOException e) {
                 e.printStackTrace();
@@ -73,7 +72,7 @@ public class Server {
     public synchronized boolean getNewPlayer() {
         System.out.println("looking for a player");
         try {
-            game.addPlayer(new Player(serverSocket.get().accept(), game, i++));
+            game.addPlayer(new Player(serverSocket.get().accept(), game));
             System.out.println("Player found!");
             return true;
         } catch (IOException e) {

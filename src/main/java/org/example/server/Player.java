@@ -14,10 +14,8 @@ public class Player {
     private final AtomicReference<ObjectOutputStream> output = new AtomicReference<>();
     private final Socket socket;
     private final Game game;
-    private final int i;
 
-    public Player(Socket socket, Game game, int i) throws IOException {
-        this.i = i;
+    public Player(Socket socket, Game game) throws IOException {
         this.game = game;
         this.socket = socket;
 
@@ -52,7 +50,7 @@ public class Player {
                 switch (packet.getCode()) {
                     case BOARD_UPDATE, PLAYER_MOVE -> game.handleInput(this, packet);
                     case PLAYER_INFO -> send(new Packet.PacketBuilder().code(Packet.Codes.PLAYER_INFO)
-                            .message("You are " + game.getMark(this)).build());
+                            .message(game.getMark(this)).build());
                     default -> send(new Packet.PacketBuilder().code(Packet.Codes.WRONG_ACTION).build());
                 }
             } catch (IOException | ClassNotFoundException | ClassCastException e) {
@@ -68,8 +66,6 @@ public class Player {
             output.get().reset();
             output.get().writeUnshared(packet);
         } catch (IOException e) {
-            System.out.println("player " + i);
-            e.printStackTrace();
             System.out.println("Lost connection to player" + game.getMark(this) + " (output)");
         }
     }

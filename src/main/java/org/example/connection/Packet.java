@@ -1,6 +1,7 @@
 package org.example.connection;
 
 import java.io.Serializable;
+import java.util.List;
 
 /**
  * Packet class used to send data between server and clients, each code from Codes enum determines which fields are set
@@ -13,13 +14,13 @@ public class Packet implements Serializable {
     private static final long serialVersionUID = 1001L;
 
     private final Codes code;
-    private final String text;
+    private final List<String> board;
     private final Integer value;
     private final String message;
 
     private Packet(PacketBuilder builder) {
         code = builder.code;
-        text = builder.text;
+        board = builder.board;
         value = builder.value;
         message = builder.message;
     }
@@ -28,8 +29,8 @@ public class Packet implements Serializable {
         return code;
     }
 
-    public String getBoard() {
-        return text;
+    public List<String> getBoard() {
+        return board;
     }
 
     public String getMessage() {
@@ -68,7 +69,7 @@ public class Packet implements Serializable {
      */
     public static class PacketBuilder {
         private Codes code = null;
-        private String text = null;
+        private List<String> board = null;
         private String message = null;
         private Integer value = null;
 
@@ -82,8 +83,8 @@ public class Packet implements Serializable {
             return this;
         }
 
-        public PacketBuilder board(String text) {
-            this.text = text;
+        public PacketBuilder board(List<String> board) {
+            this.board = List.copyOf(board);
             return this;
         }
 
