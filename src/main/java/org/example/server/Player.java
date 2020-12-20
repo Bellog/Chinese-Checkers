@@ -3,7 +3,6 @@ package org.example.server;
 import org.example.connection.ConnectionHelper;
 import org.example.connection.Packet;
 
-import java.awt.*;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -47,7 +46,6 @@ public class Player {
     private void handleInput() {
         while (!socket.isClosed() && socket.isConnected()) {
             try {
-                Color color = Color.BLACK;
                 Packet packet = (Packet) input.get().readUnshared();
                 switch (packet.getCode()) {
                     case BOARD_UPDATE, PLAYER_MOVE -> gameHandler.handleInput(this, packet);

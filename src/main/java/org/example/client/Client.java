@@ -11,7 +11,7 @@ import java.awt.event.MouseListener;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Client extends JFrame {
+public class Client extends JFrame implements IClient {
 
     private final List<List<Field>> board = new ArrayList<>();
     private final ClientConnection conn;
@@ -54,10 +54,12 @@ public class Client extends JFrame {
         new Client();
     }
 
+    @Override
     public List<Color> getColors() {
         return colors;
     }
 
+    @Override
     public void setColors(List<Color> colors) {
         this.colors = colors;
     }
@@ -66,10 +68,12 @@ public class Client extends JFrame {
 
     }
 
+    @Override
     public void setPlayerInfo(int value) {
         setTitle("Sternhalma \"" + value + "\"");
     }
 
+    @Override
     public void update(List<List<Pair>> board) {
         if (this.board.isEmpty()) {
             getContentPane().setLayout(new GridLayout(board.size(), board.get(0).size()));

@@ -13,7 +13,7 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.concurrent.atomic.AtomicReference;
 
-public class ClientConnection {
+public class ClientConnection implements IClientConnection {
 
     private final AtomicReference<ObjectInputStream> input = new AtomicReference<>();
     private final AtomicReference<ObjectOutputStream> output = new AtomicReference<>();
@@ -90,6 +90,7 @@ public class ClientConnection {
         }).start();
     }
 
+    @Override
     public void send(Packet packet) {
         try {
             output.get().reset();
@@ -127,6 +128,7 @@ public class ClientConnection {
         }
     }
 
+    @Override
     public boolean isInitialized() {
         return isInitialized;
     }

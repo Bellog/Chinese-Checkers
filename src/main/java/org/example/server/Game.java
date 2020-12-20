@@ -6,7 +6,7 @@ import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Game {
+public class Game implements IGame {
 
     private final List<List<Field>> board = new ArrayList<>();
     //    private final List<String> marks = List.of("x", "o", "#");
@@ -30,18 +30,22 @@ public class Game {
         }
     }
 
+    @Override
     public int getBoardHeight() {
         return boardHeight;
     }
 
+    @Override
     public int getBoardWidth() {
         return boardWidth;
     }
 
+    @Override
     public int getNumberOfPlayers() {
         return numberOfPlayers;
     }
 
+    @Override
     public Pair getFieldInfo(int x, int y) {
         try {
             return new Pair(board.get(y).get(x).getState(), board.get(y).get(x).getBase());
@@ -55,6 +59,7 @@ public class Game {
      *
      * @return true if move is successful, false if not
      */
+    @Override
     public boolean move(int x0, int y0, int x1, int y1) {
         int state = board.get(y1).get(x1).getState();
         if (state < 0 || state == board.get(y0).get(x0).getState()) {
@@ -65,6 +70,7 @@ public class Game {
         return false;
     }
 
+    @Override
     public boolean hasWinner() {
 //        int check = 0;
 //        for (var i = 0; i < boardHeight; i++) {
@@ -78,6 +84,7 @@ public class Game {
 //        return check >= numberOfPlayers;
     }
 
+    @Override
     public List<Color> getColors() {
         return colors;
     }

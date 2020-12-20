@@ -2,6 +2,11 @@ package org.example;
 
 import java.io.Serializable;
 
+/**
+ * Stores 2 integer values.
+ * This program requires sending pair of numbers (position in 2d arrays or {@link org.example.client.Field}'s state
+ * Pair class makes it easier to send such values.
+ */
 public final class Pair implements Serializable {
     private static final long serialVersionUID = 1003L;
 
