@@ -1,8 +1,10 @@
 package org.example.server;
 
+import org.example.Pair;
 import org.example.connection.Packet;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.locks.ReentrantLock;
@@ -11,27 +13,31 @@ import java.util.concurrent.locks.ReentrantLock;
 public class GameHandler {
 
     //private final List<Field> board = new ArrayList<>();
-    private final List<Player> players = new ArrayList<>();
-    private final List<String> marks = List.of("x", "o", "#");
+    private final List<Player> players;
+    //    private final List<String> marks = List.of("x", "o", "#");
     private final Game game;
     private final String gameVersion;
     private final Server server;
     private final ReentrantLock LOCK = new ReentrantLock();
-    private int current;
+    /**
+     * Index of current player in players
+     */
+    private int currentPlayer;
 
     public GameHandler(String gameVersion, Server server, Game game) {
         this.server = server;
         this.gameVersion = gameVersion;
         this.game = game;
+        players = new ArrayList<>(Collections.nCopies(game.getNumberOfPlayers(), null));
     }
 
     public void removePlayer(Player player) {
         LOCK.lock();
-        String mark = getMark(player);
+        int id = getPlayerId(player);
         players.set(players.indexOf(player), null);
         players.stream().filter(Objects::nonNull)
                 .forEach(p -> sendToPlayer(p, new Packet.PacketBuilder()
-                        .code(Packet.Codes.INFO).message("Lost connection to player " + mark).build()));
+                        .code(Packet.Codes.INFO).message("Lost connection to player " + id).build()));
         LOCK.unlock();
 
         new Thread(() -> {
@@ -51,7 +57,7 @@ public class GameHandler {
 
     public synchronized void addPlayer(Player player) {
         LOCK.lock();
-        if (players.size() == 0) current = 0;
+        if (players.size() == 0) currentPlayer = 0;
         for (int i = 0; i < players.size(); i++) {
             if (players.get(i) == null) {
                 players.set(i, player);
@@ -63,26 +69,27 @@ public class GameHandler {
         LOCK.unlock();
     }
 
-    public synchronized String getMark(Player player) {
-        if (!players.contains(player)) return "ERROR";
+    /**
+     * Returns player's id
+     *
+     * @param player returns this players id
+     * @return -1 if this player does not have any id
+     */
+    public synchronized int getPlayerId(Player player) {
+        if (!players.contains(player)) return -1;
 
-        return marks.get(players.indexOf(player));
+        return players.indexOf(player);
     }
 
-    public String boardAsText() {
-        StringBuilder text = new StringBuilder();
-        game.setMarks();
-        for (var i = 0; i < game.getBoardHeight(); i++) {
-            for (var j = 0; j < game.getBoardWidth(); j++) {
-                text.append(game.getMark(j, i));
-                if (j < game.getBoardWidth() - 1)
-                    text.append("|");
+    public List<List<Pair>> boardAsList() {
+        List<List<Pair>> board = new ArrayList<>();
+        for (int y = 0; y < game.getBoardHeight(); y++) {
+            board.add(new ArrayList<>());
+            for (int x = 0; x < game.getBoardWidth(); x++) {
+                board.get(y).add(game.getFieldInfo(x, y));
             }
-            text.append("\n");
-            if (i < game.getBoardWidth() - 1)
-                text.append("-------\n");
         }
-        return text.toString();
+        return board;
     }
 
 
@@ -90,46 +97,51 @@ public class GameHandler {
         LOCK.lock();
         switch (packet.getCode()) {
             case BOARD_UPDATE -> sendToPlayer(player, new Packet.PacketBuilder()
-                    .code(Packet.Codes.BOARD_UPDATE).board(boardAsText()).build());
-            case PLAYER_MOVE -> move(player, players.indexOf(player), 0, packet.getEnd().x, packet.getEnd().y);
+                    .code(Packet.Codes.BOARD_UPDATE).board(boardAsList()).build());
+            case PLAYER_MOVE -> move(player, packet.getStartPos().first, packet.getStartPos().second,
+                    packet.getEndPos().first, packet.getEndPos().second);
         }
         LOCK.unlock();
     }
 
     private void move(Player player, int x0, int y0, int x1, int y1) {
-        System.out.println(getMark(player) + " " + players.indexOf(player));
-        if (players.indexOf(player) != current) {
+        System.out.println(players.indexOf(player) + ": (" + x0 + ", " + y0 + ") -> (" + x1 + ", " + y1 + ")");
+        if (players.indexOf(player) != currentPlayer) {
             sendToPlayer(player, new Packet.PacketBuilder().code(Packet.Codes.OPPONENT_TURN).build());
             return;
         }
-        if (game.isMoveLegal(x0, y0, x1, y1)) {
-            if (game.hasWinner())
+        if (game.getFieldInfo(x0, y0).first != players.indexOf(player)) {
+            sendToPlayer(player, new Packet.PacketBuilder().code(Packet.Codes.ACTION_FAILURE)
+                    .message("This is not your pawn").build());
+            return;
+        }
+
+        if (game.move(x0, y0, x1, y1)) {
+            if (game.hasWinner()) {
                 for (int i = 0; i < game.getNumberOfPlayers(); i++)
-                    if (i != current)
+                    if (i != currentPlayer)
                         sendToPlayer(players.get(i), new Packet.PacketBuilder()
                                 .code(Packet.Codes.GAME_END).message("you lost!").build());
                     else
                         sendToPlayer(players.get(i), new Packet.PacketBuilder()
                                 .code(Packet.Codes.GAME_END).message("you won!").build());
-            else if (game.isFilledUp()) {
-                for (int i = 0; i < game.getNumberOfPlayers(); i++)
-                    sendToPlayer(players.get(i), new Packet.PacketBuilder()
-                            .code(Packet.Codes.GAME_END).message("Tie!").build());
             } else
                 for (int i = 0; i < game.getNumberOfPlayers(); i++)
-                    if (i != current)
+                    if (i != currentPlayer)
                         sendToPlayer(players.get(i), new Packet.PacketBuilder()
-                                .code(Packet.Codes.OPPONENT_MOVE).board(boardAsText())
-                                .message("Opponent " + getMark(player) + " moved").build());
+                                .code(Packet.Codes.OPPONENT_MOVE).board(boardAsList())
+                                .message("Opponent " + getPlayerId(player) + " moved").build());
                     else
                         sendToPlayer(players.get(i), new Packet.PacketBuilder()
-                                .code(Packet.Codes.ACTION_SUCCESS).board(boardAsText()).build());
+                                .code(Packet.Codes.ACTION_SUCCESS).board(boardAsList()).build());
         } else {
             player.send(new Packet.PacketBuilder()
                     .code(Packet.Codes.ACTION_FAILURE).message("This field is already set").build());
+            return;
         }
-        current = (current + 1) % game.getNumberOfPlayers();
-        sendToPlayer(players.get(current), new Packet.PacketBuilder().code(Packet.Codes.PLAYER_TURN).build());
+        //move to next player and notify them
+        currentPlayer = (currentPlayer + 1) % game.getNumberOfPlayers();
+        sendToPlayer(players.get(currentPlayer), new Packet.PacketBuilder().code(Packet.Codes.PLAYER_TURN).build());
     }
 
     private void sendToPlayer(Player player, Packet packet) {
@@ -137,25 +149,7 @@ public class GameHandler {
         new Thread(() -> player.send(packet)).start();
     }
 
-    /*
-    private boolean hasWinner() {
-        for (int i = 0; i < maxPlayers; i++) {
-            int finalI = i;
-            if (board.stream().filter(v -> v.getMark().equals(marks.get(finalI))).count() > 3) {
-                return true;
-            }
-        }
-        return false;
+    public Game getGame() {
+        return game;
     }
-
-     */
-
-    /*
-    private boolean isFilledUp() {
-        return board.stream().noneMatch(v -> v.getMark().equals(" "));
-    }
-
-     */
-
-    public Game getGame() { return game; }
 }

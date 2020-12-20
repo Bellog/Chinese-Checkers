@@ -3,6 +3,7 @@ package org.example.server;
 import org.example.connection.ConnectionHelper;
 import org.example.connection.Packet;
 
+import java.awt.*;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -46,15 +47,18 @@ public class Player {
     private void handleInput() {
         while (!socket.isClosed() && socket.isConnected()) {
             try {
+                Color color = Color.BLACK;
                 Packet packet = (Packet) input.get().readUnshared();
                 switch (packet.getCode()) {
                     case BOARD_UPDATE, PLAYER_MOVE -> gameHandler.handleInput(this, packet);
+                    case PLAYER_COLORS -> send(new Packet.PacketBuilder().code(Packet.Codes.PLAYER_COLORS)
+                            .colors(gameHandler.getGame().getColors()).build());
                     case PLAYER_INFO -> send(new Packet.PacketBuilder().code(Packet.Codes.PLAYER_INFO)
-                            .message("You are " + gameHandler.getMark(this)).build());
+                            .value(gameHandler.getPlayerId(this)).build());
                     default -> send(new Packet.PacketBuilder().code(Packet.Codes.WRONG_ACTION).build());
                 }
             } catch (IOException | ClassNotFoundException | ClassCastException e) {
-                System.out.println("Lost connection to player " + gameHandler.getMark(this) + " (input)");
+                System.out.println("Lost connection to player " + gameHandler.getPlayerId(this) + " (input)");
                 gameHandler.removePlayer(this);
                 return;
             }
@@ -66,7 +70,7 @@ public class Player {
             output.get().reset();
             output.get().writeUnshared(packet);
         } catch (IOException e) {
-            System.out.println("Lost connection to player" + gameHandler.getMark(this) + " (output)");
+            System.out.println("Lost connection to player" + gameHandler.getPlayerId(this) + " (output)");
         }
     }
 }

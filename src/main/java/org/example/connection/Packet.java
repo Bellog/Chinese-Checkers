@@ -1,7 +1,10 @@
 package org.example.connection;
 
-import java.io.Serial;
+import org.example.Pair;
+
+import java.awt.*;
 import java.io.Serializable;
+import java.util.List;
 
 /**
  * Packet class used to send data between server and clients, each code from Codes enum determines which fields are set
@@ -14,27 +17,29 @@ public class Packet implements Serializable {
     private static final long serialVersionUID = 1001L;
 
     private final Codes code;
-    private final String text;
+    private final List<List<Pair>> board;
     private final Integer value;
     private final String message;
-    private final Position start;
-    private final Position end;
+    private final Pair startPos;
+    private final Pair endPos;
+    private final List<Color> colors;
 
     private Packet(PacketBuilder builder) {
         code = builder.code;
-        text = builder.text;
+        board = builder.board;
         value = builder.value;
         message = builder.message;
-        start = builder.start;
-        end = builder.end;
+        startPos = builder.start;
+        endPos = builder.end;
+        colors = builder.colors;
     }
 
     public Codes getCode() {
         return code;
     }
 
-    public String getBoard() {
-        return text;
+    public List<List<Pair>> getBoard() {
+        return board;
     }
 
     public String getMessage() {
@@ -45,9 +50,17 @@ public class Packet implements Serializable {
         return value;
     }
 
-    public Position getStart() { return start; }
+    public Pair getStartPos() {
+        return startPos;
+    }
 
-    public Position getEnd() { return end; }
+    public Pair getEndPos() {
+        return endPos;
+    }
+
+    public List<Color> getColors() {
+        return colors;
+    }
 
     /**
      * List of possible code Packet class can be used to send
@@ -63,7 +76,8 @@ public class Packet implements Serializable {
         GAME_END,
         BOARD_UPDATE,
         PLAYER_MOVE,
-        OPPONENT_MOVE;
+        OPPONENT_MOVE,
+        PLAYER_COLORS;
         //Add more actions as needed, then change version inside pom.xml to ensure integrity between client and server
 
         /**
@@ -72,28 +86,17 @@ public class Packet implements Serializable {
         private static final long serialVersionUID = 1002L;
     }
 
-    public static class Position implements Serializable {
-        private static final long serialVersionUID = 1003L;
-
-        public final int x;
-        public final int y;
-
-        public Position (int x, int y) {
-            this.x = x;
-            this.y = y;
-        }
-    }
-
     /*
         Alternatywnie może być kreator na podstawie kodów - np.: dla info jedynym parametrem jest text, dla innego więcej
      */
     public static class PacketBuilder {
         private Codes code = null;
-        private String text = null;
+        private List<List<Pair>> board = null;
         private String message = null;
         private Integer value = null;
-        private Position start = null;
-        private Position end = null;
+        private Pair start = null;
+        private Pair end = null;
+        private List<Color> colors = null;
 
         public PacketBuilder code(Codes code) {
             this.code = code;
@@ -105,8 +108,8 @@ public class Packet implements Serializable {
             return this;
         }
 
-        public PacketBuilder board(String text) {
-            this.text = text;
+        public PacketBuilder board(List<List<Pair>> board) {
+            this.board = List.copyOf(board);
             return this;
         }
 
@@ -115,13 +118,18 @@ public class Packet implements Serializable {
             return this;
         }
 
-        public PacketBuilder start(Position start) {
+        public PacketBuilder start(Pair start) {
             this.start = start;
             return this;
         }
 
-        public PacketBuilder end(Position end) {
+        public PacketBuilder end(Pair end) {
             this.end = end;
+            return this;
+        }
+
+        public PacketBuilder colors(List<Color> colors) {
+            this.colors = colors;
             return this;
         }
 
