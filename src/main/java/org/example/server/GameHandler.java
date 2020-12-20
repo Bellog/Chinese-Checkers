@@ -9,21 +9,45 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.locks.ReentrantLock;
 
+/**
+ * Operates players' turns and view of the game.
+ */
 //TODO move handler (this) to server class, requires proper implementation of handler, field and game classes first
 public class GameHandler {
 
     //private final List<Field> board = new ArrayList<>();
+    /**
+     * Data about players.
+     */
     private final List<Player> players;
     //    private final List<String> marks = List.of("x", "o", "#");
+    /**
+     * Type of game that will be played.
+     */
     private final Game game;
+    /**
+     * PLayers need to have the same version as the server.
+     */
     private final String gameVersion;
+    /**
+     * Game server.
+     */
     private final Server server;
+    /**
+     * Safety of threads.
+     */
     private final ReentrantLock LOCK = new ReentrantLock();
     /**
      * Index of current player in players
      */
     private int currentPlayer;
 
+    /**
+     * Class constructor.
+     * @param gameVersion version needed to play the game.
+     * @param server given server.
+     * @param game type of game that will be played.
+     */
     public GameHandler(String gameVersion, Server server, Game game) {
         this.server = server;
         this.gameVersion = gameVersion;
@@ -31,6 +55,10 @@ public class GameHandler {
         players = new ArrayList<>(Collections.nCopies(game.getNumberOfPlayers(), null));
     }
 
+    /**
+     * Removes a player from the list.
+     * @param player player that shall be removed from the game.
+     */
     public void removePlayer(Player player) {
         LOCK.lock();
         int id = getPlayerId(player);
@@ -51,10 +79,18 @@ public class GameHandler {
         }).start();
     }
 
+    /**
+     * Version getter.
+     * @return version needed to play the game.
+     */
     public String getGameVersion() {
         return gameVersion;
     }
 
+    /**
+     * If a game is not full, adds a player that connected to it.
+     * @param player a given player
+     */
     public synchronized void addPlayer(Player player) {
         LOCK.lock();
         if (players.size() == 0) currentPlayer = 0;
@@ -81,6 +117,10 @@ public class GameHandler {
         return players.indexOf(player);
     }
 
+    /**
+     * Represents the situation of the game.
+     * @return board representation.
+     */
     public List<List<Pair>> boardAsList() {
         List<List<Pair>> board = new ArrayList<>();
         for (int y = 0; y < game.getBoardHeight(); y++) {
@@ -93,6 +133,12 @@ public class GameHandler {
     }
 
 
+    /**
+     * Interprets input from the player.
+     * Sends signals to update the board or to move a player.
+     * @param player a given player
+     * @param packet packet of necessary data
+     */
     public void handleInput(Player player, Packet packet) {
         LOCK.lock();
         switch (packet.getCode()) {
@@ -104,6 +150,15 @@ public class GameHandler {
         LOCK.unlock();
     }
 
+    /**
+     * Intends to move a player by given coordinates.
+     * Checks if a win condition is fulfilled.
+     * @param player the player
+     * @param x0 x coordinate of a pawn that wants to move.
+     * @param y0 y coordinate of a pawn that wants to move.
+     * @param x1 x coordinate of the point that the pawn wants to be moved to.
+     * @param y1 y coordinate of the point that the pawn wants to be moved to.
+     */
     private void move(Player player, int x0, int y0, int x1, int y1) {
         System.out.println(players.indexOf(player) + ": (" + x0 + ", " + y0 + ") -> (" + x1 + ", " + y1 + ")");
         if (players.indexOf(player) != currentPlayer) {
@@ -144,11 +199,20 @@ public class GameHandler {
         sendToPlayer(players.get(currentPlayer), new Packet.PacketBuilder().code(Packet.Codes.PLAYER_TURN).build());
     }
 
+    /**
+     * Distributes important game information to a player.
+     * @param player a given player.
+     * @param packet data.
+     */
     private void sendToPlayer(Player player, Packet packet) {
         if (player == null) return;
         new Thread(() -> player.send(packet)).start();
     }
 
+    /**
+     * Game getter.
+     * @return type of played game.
+     */
     public Game getGame() {
         return game;
     }

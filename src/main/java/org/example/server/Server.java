@@ -9,16 +9,32 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.util.concurrent.atomic.AtomicReference;
 
+/**
+ * Server class responsible for connection between game and players.
+ * Has a main function that constructs new instant of this.
+ */
 public class Server {
 
+    /**
+     * Connection.
+     */
     private final AtomicReference<ServerSocket> serverSocket = new AtomicReference<>();
+    /**
+     * Operates actions in the game.
+     */
     private final GameHandler gameHandler;
     /**
      * Maximum time server will wait for find a new player, in seconds.
      */
     private final int maxTimeout = 30;
+    /**
+     * Just i.
+     */
     private int i = 0;
 
+    /**
+     * Class constructor.
+     */
     public Server() {
 
         String version = null;
@@ -66,10 +82,18 @@ public class Server {
         System.out.println("Found all players");
     }
 
+    /**
+     * Main function that generates instance of Server.
+     * @param args useless.
+     */
     public static void main(String[] args) {
         new Server();
     }
 
+    /**
+     * Fills game with players.
+     * @return true if successfull, false if a player couldn't be added.
+     */
     public synchronized boolean getNewPlayer() {
         System.out.println("looking for a player");
         try {

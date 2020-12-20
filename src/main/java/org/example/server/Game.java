@@ -6,15 +6,36 @@ import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Includes logic of a specific type of a game and operates the board.
+ */
 public class Game implements IGame {
 
+    /**
+     * Game board overview.
+     */
     private final List<List<Field>> board = new ArrayList<>();
     //    private final List<String> marks = List.of("x", "o", "#");
+    /**
+     * List of player colors.
+     */
     private final List<Color> colors = List.of(Color.BLACK, Color.RED, Color.GREEN, Color.BLUE);
+    /**
+     * Vertical dimension of the board.
+     */
     private final int boardHeight = 4;
+    /**
+     * Horizontal dimension of the board.
+     */
     private final int boardWidth = 4;
+    /**
+     * Number of players required to play a game.
+     */
     private final int numberOfPlayers = 3;
 
+    /**
+     * Class constructor.
+     */
     public Game() {
         for (var i = 0; i < boardWidth; i++) {
             board.add(new ArrayList<>());
@@ -30,21 +51,39 @@ public class Game implements IGame {
         }
     }
 
+    /**
+     * Height getter.
+     * @return vertical dimension of the board.
+     */
     @Override
     public int getBoardHeight() {
         return boardHeight;
     }
 
+    /**
+     * Width getter.
+     * @return horizontal dimension of the board.
+     */
     @Override
     public int getBoardWidth() {
         return boardWidth;
     }
 
+    /**
+     * Number getter.
+     * @return required number of players.
+     */
     @Override
     public int getNumberOfPlayers() {
         return numberOfPlayers;
     }
 
+    /**
+     * Used to access information about occupation and significance of fields on board.
+     * @param x coordinate
+     * @param y coordinate
+     * @return state and base of a field, null if no such coordinates were found.
+     */
     @Override
     public Pair getFieldInfo(int x, int y) {
         try {
@@ -70,6 +109,10 @@ public class Game implements IGame {
         return false;
     }
 
+    /**
+     * Win condition.
+     * @return true if a situation on the board is game-ending, false otherwise.
+     */
     @Override
     public boolean hasWinner() {
 //        int check = 0;
@@ -84,11 +127,18 @@ public class Game implements IGame {
 //        return check >= numberOfPlayers;
     }
 
+    /**
+     * Colors getter.
+     * @return list of colors.
+     */
     @Override
     public List<Color> getColors() {
         return colors;
     }
 
+    /**
+     * Represents pawns and empty spots on the board.
+     */
     public static class Field {
 
         /**
@@ -100,18 +150,34 @@ public class Game implements IGame {
          */
         private volatile int state = -1;
 
+        /**
+         * Class constructor.
+         * @param base empty spot or starting point of a player.
+         */
         public Field(int base) {
             this.base = base;
         }
 
+        /**
+         * State getter.
+         * @return number of a player if he occupies the field, -1 otherwise.
+         */
         public int getState() {
             return state;
         }
 
+        /**
+         * State setter
+         * @param state occupation of a field.
+         */
         public void setState(int state) {
             this.state = state;
         }
 
+        /**
+         * Base getter
+         * @return number of a player if he started the game on this field, -1 otherwise.
+         */
         public int getBase() {
             return base;
         }
