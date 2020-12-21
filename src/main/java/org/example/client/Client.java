@@ -11,23 +11,10 @@ import java.awt.event.MouseListener;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Helps players access the game via server.
- * Has a main function that creates instance of this.
- */
 public class Client extends JFrame implements IClient {
 
-    /**
-     * Show the state of the game.
-     */
     private final List<List<Field>> board = new ArrayList<>();
-    /**
-     * Connection.
-     */
     private final ClientConnection conn;
-    /**
-     * Used to determine one player's color.
-     */
     private List<Color> colors;
 
     /**
@@ -65,28 +52,16 @@ public class Client extends JFrame implements IClient {
         setVisible(true);
     }
 
-    /**
-     * Main function, generates instance of Client.
-     * @param args unused.
-     */
     public static void main(String[] args) {
         System.out.println("Starting client");
         new Client();
     }
 
-    /**
-     * Color-list getter.
-     * @return list of colors.
-     */
     @Override
     public List<Color> getColors() {
         return colors;
     }
 
-    /**
-     * Color-list setter.
-     * @param colors list of colors.
-     */
     @Override
     public void setColors(List<Color> colors) {
         this.colors = colors;
@@ -96,19 +71,11 @@ public class Client extends JFrame implements IClient {
 
     }
 
-    /**
-     * For a player to get information about themselfs in a game.
-     * @param value number of a player.
-     */
     @Override
     public void setPlayerInfo(int value) {
         setTitle("Sternhalma \"" + value + "\"");
     }
 
-    /**
-     * Generates graphics for players.
-     * @param board representation of the board.
-     */
     @Override
     public void update(List<List<Pair>> board) {
         if (this.board.isEmpty()) {

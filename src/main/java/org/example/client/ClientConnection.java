@@ -18,29 +18,15 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public class ClientConnection implements IClientConnection {
 
-    /**
-     * Input.
-     */
     private final AtomicReference<ObjectInputStream> input = new AtomicReference<>();
-    /**
-     * Output.
-     */
     private final AtomicReference<ObjectOutputStream> output = new AtomicReference<>();
-    /**
-     * Connection.
-     */
     private final Socket socket;
-    /**
-     * Operated user.
-     */
     private final Client client;
-    /**
-     * Makes sure the new Client in a thread is initialised.
-     */
     private volatile boolean isInitialized = false;
 
     /**
      * Class constructor.
+     *
      * @param client connected user.
      */
     public ClientConnection(Client client) {
@@ -59,6 +45,7 @@ public class ClientConnection implements IClientConnection {
 
     /**
      * Initialises a connection between user and the server.
+     *
      * @throws Exception
      */
     private void init() throws Exception {
@@ -96,7 +83,7 @@ public class ClientConnection implements IClientConnection {
             throw new Exception();
         }
         System.out.println("Found a game!");
-        new Thread(this::handleServerReceive).start();
+        new Thread(this::handleServerInput).start();
         new Thread(() -> {
             try {
 
@@ -116,10 +103,6 @@ public class ClientConnection implements IClientConnection {
         }).start();
     }
 
-    /**
-     * Transfers data about the game.
-     * @param packet data.
-     */
     @Override
     public void send(Packet packet) {
         try {
@@ -131,10 +114,7 @@ public class ClientConnection implements IClientConnection {
         }
     }
 
-    /**
-     * Interpretation of messages from the server.
-     */
-    private void handleServerReceive() {
+    private void handleServerInput() {
         while (socket.isConnected()) {
             try {
                 Packet packet = (Packet) input.get().readUnshared();
@@ -161,10 +141,6 @@ public class ClientConnection implements IClientConnection {
         }
     }
 
-    /**
-     * Checking-variable getter.
-     * @return true if a connection is initialised, false otherwise.
-     */
     @Override
     public boolean isInitialized() {
         return isInitialized;

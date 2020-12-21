@@ -9,25 +9,10 @@ import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.concurrent.atomic.AtomicReference;
 
-/**
- * Class representation of player and their logic.
- */
 public class Player {
-    /**
-     * Input.
-     */
     private final AtomicReference<ObjectInputStream> input = new AtomicReference<>();
-    /**
-     * Output.
-     */
     private final AtomicReference<ObjectOutputStream> output = new AtomicReference<>();
-    /**
-     * Connection required to play.
-     */
     private final Socket socket;
-    /**
-     * Operates player's actions.
-     */
     private final GameHandler gameHandler;
 
     /**
@@ -64,9 +49,6 @@ public class Player {
         new Thread(this::handleInput).start();
     }
 
-    /**
-     * Handles any input from the player.
-     */
     private void handleInput() {
         while (!socket.isClosed() && socket.isConnected()) {
             try {
@@ -87,10 +69,6 @@ public class Player {
         }
     }
 
-    /**
-     * Sends packs of data, communicates with the game.
-     * @param packet data.
-     */
     public synchronized void send(Packet packet) {
         try {
             output.get().reset();

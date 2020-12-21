@@ -9,60 +9,36 @@ import java.awt.*;
  * Graphic representation of a field on the board.
  */
 public class Field extends JPanel {
-    private final JLabel label;
-    /**
-     * Adherence to a player.
-     */
-    private final int base;
-    /**
-     * Coordinates of this on the board.
-     */
+    private final int type;
     private final Pair position;
-    /**
-     * Size of this.
-     */
     private final int radius = 40;
-    /**
-     * User that will receive the graphic representation of this.
-     */
     private final Client client;
-    /**
-     * Occupation of this.
-     */
+
     private int state;
 
     /**
      * Class constructor.
-     * @param base affiliation to a player.
-     * @param state occupation of this field.
+     *
+     * @param type     affiliation to a player.
+     * @param state    occupation of this field.
      * @param position coordinates.
-     * @param client user for whom this field should be painted.
+     * @param client   user for whom this field should be painted.
      */
-    public Field(int base, int state, Pair position, Client client) {
+    public Field(int type, int state, Pair position, Client client) {
         this.client = client;
-        this.base = base;
+        this.type = type;
         this.state = state;
         this.position = position;
         setPreferredSize(new Dimension(client.getWidth() / 4, client.getHeight() / 4));
         setBorder(BorderFactory.createLineBorder(Color.BLACK));
-        label = new JLabel();
-        label.setHorizontalAlignment(JLabel.CENTER);
-        label.setVerticalAlignment(JLabel.CENTER);
-        label.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 25));
-        label.setText(" ");
 
         setLayout(new BorderLayout());
-        add(label, BorderLayout.CENTER);
     }
 
-    /**
-     * Paint component.
-     * @param g graphics.
-     */
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
-        g.setColor(client.getColors().get(base + 1));
+        g.setColor(client.getColors().get(type + 1));
         if (g.getColor() == Color.BLACK)
             g.setColor(Color.WHITE);
         g.fillRect(10, 10, getWidth() - 10, getHeight() - 10);
@@ -74,19 +50,11 @@ public class Field extends JPanel {
 
     }
 
-    /**
-     * State setter.
-     * @param state occupation of the field.
-     */
     public void setState(int state) {
         this.state = state;
         repaint();
     }
 
-    /**
-     * Position getter.
-     * @return pair of coordinates.
-     */
     public Pair getPosition() {
         return position;
     }

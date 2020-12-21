@@ -6,50 +6,40 @@ import java.awt.*;
 import java.util.List;
 
 /**
- * Various types of games implement from this.
+ * Interface used to implement various game modes.
  */
 public interface IGame {
-    /**
-     * Height getter.
-     * @return vertical dimension of the board.
-     */
+
     int getBoardHeight();
 
-    /**
-     * Width getter.
-     * @return horizontal dimension of the board.
-     */
     int getBoardWidth();
 
-    /**
-     * Number getter.
-     * @return required number of players.
-     */
     int getNumberOfPlayers();
 
     /**
-     * Used to access information about occupation and significance of fields on board.
+     * Used to access information about state and type of fields on board.
+     *
      * @param x coordinate
      * @param y coordinate
-     * @return state and base of a field, null if no such coordinates were found.
+     * @return state and type of a field, null if no such coordinates were found.
      */
     Pair getFieldInfo(int x, int y);
 
     /**
-     * Rules should be defined in a separate class and be used here to determine outcome of the move
+     * Moves pawn from (x0, y0) to (x1, y1).
+     * Assumes that it's pawn owner's turn
+     * Checks if move is possible.
      *
      * @return true if move is successful, false if not
      */
     boolean move(int x0, int y0, int x1, int y1);
 
-    /**
-     * Win condition.
-     * @return true if a situation on the board is game-ending, false otherwise.
-     */
     boolean hasWinner();
 
     /**
-     * Colors getter.
+     * Returns list in certain order: no player, player0, player1, etc.
+     * if field's state is x then it's corresponding color is at x+1
+     *
      * @return list of colors.
      */
     List<Color> getColors();

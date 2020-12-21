@@ -10,30 +10,14 @@ import java.io.Serializable;
 public final class Pair implements Serializable {
     private static final long serialVersionUID = 1003L;
 
-    /**
-     * First integer value.
-     */
     public final int first;
-    /**
-     * Second integer value.
-     */
     public final int second;
 
-    /**
-     * Class constructor.
-     * @param first integer value.
-     * @param second integer value.
-     */
     public Pair(int first, int second) {
         this.first = first;
         this.second = second;
     }
 
-    /**
-     * Checks if we are dealing with the same pair.
-     * @param o object to compare (doesn't have to be a Pair).
-     * @return true if they are the same, false if not or if they are instances of different classes.
-     */
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

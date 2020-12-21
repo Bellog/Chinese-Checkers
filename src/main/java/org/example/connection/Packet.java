@@ -86,9 +86,6 @@ public class Packet implements Serializable {
         private static final long serialVersionUID = 1002L;
     }
 
-    /*
-        Alternatywnie może być kreator na podstawie kodów - np.: dla info jedynym parametrem jest text, dla innego więcej
-     */
     public static class PacketBuilder {
         private Codes code = null;
         private List<List<Pair>> board = null;
