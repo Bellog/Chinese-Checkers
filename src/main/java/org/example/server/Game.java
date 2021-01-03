@@ -1,45 +1,37 @@
 package org.example.server;
 
+import org.example.ARuleSet;
+import org.example.BasicRuleSet;
 import org.example.Pair;
 
 import java.awt.*;
-import java.util.ArrayList;
 import java.util.List;
 
 public class Game implements IGame {
 
-    private final List<List<Field>> board = new ArrayList<>();
-    private final List<Color> colors = List.of(Color.BLACK, Color.RED, Color.GREEN, Color.BLUE);
-    private final int boardHeight = 4;
-    private final int boardWidth = 4;
+    //TODO make it so that you choose game mode in cli when server starts
+    private final ARuleSet ruleSet;
+    //TODO remove Color.WHITE and change all usages of this list
+    //background color should be chosen by client, not the game itself
+    private final List<Color> colorScheme = List.of(Color.RED, Color.GREEN, Color.BLUE, Color.CYAN, Color.MAGENTA, Color.YELLOW);
+
     /**
      * Number of players required to play a game.
      */
-    private final int numberOfPlayers = 3;
+    private final int numberOfPlayers = 2;
 
     public Game() {
-        for (var i = 0; i < boardWidth; i++) {
-            board.add(new ArrayList<>());
-            if (i < numberOfPlayers) {
-                board.get(0).add(new Field(i));
-                board.get(0).get(i).setState(i);
-            } else board.get(0).add(new Field(-1));
-        }
-        for (var i = 1; i < boardHeight; i++) {
-            for (var j = 0; j < boardWidth; j++) {
-                board.get(i).add(new Field(-1));
-            }
-        }
+        ruleSet = new BasicRuleSet();
     }
 
     @Override
     public int getBoardHeight() {
-        return boardHeight;
+        return ruleSet.getBoard().size();
     }
 
     @Override
     public int getBoardWidth() {
-        return boardWidth;
+        return ruleSet.getBoard().get(0).size();
     }
 
     @Override
@@ -50,7 +42,7 @@ public class Game implements IGame {
     @Override
     public Pair getFieldInfo(int x, int y) {
         try {
-            return new Pair(board.get(y).get(x).getState(), board.get(y).get(x).getType());
+            return ruleSet.getBoard().get(y).get(x);
         } catch (IndexOutOfBoundsException e) {
             return null;
         }
@@ -58,10 +50,13 @@ public class Game implements IGame {
 
     @Override
     public boolean move(int x0, int y0, int x1, int y1) {
-        int state = board.get(y1).get(x1).getState();
-        if (state < 0 || state == board.get(y0).get(x0).getState()) {
-            board.get(y1).get(x1).setState(board.get(y0).get(x0).getState());
-            board.get(y0).get(x0).setState(state);
+        int state = ruleSet.getBoard().get(y1).get(x1).first;
+        if (state < 0 || state == ruleSet.getBoard().get(y0).get(x0).second) {
+            ruleSet.getBoard().get(y1).set(x1, new Pair(
+                    ruleSet.getBoard().get(y0).get(x0).first,
+                    ruleSet.getBoard().get(y1).get(x1).second));
+            ruleSet.getBoard().get(y0).set(x0, new Pair(
+                    state, ruleSet.getBoard().get(y0).get(x0).second));
             return true;
         }
         return false;
@@ -69,54 +64,12 @@ public class Game implements IGame {
 
     @Override
     public boolean hasWinner() {
-//        int check = 0;
-//        for (var i = 0; i < boardHeight; i++) {
-//            for (var j = 0; j < boardWidth; j++) {
-//                if (board.get(i).get(j).getBase() >= 0 && board.get(i).get(j).getState() < 0)
-//                    check++;
-//            }
-//        }
-        return board.get(boardWidth - 1).get(boardHeight - 1).getState() >= 0;
-
-//        return check >= numberOfPlayers;
+        return false;
     }
 
     @Override
-    public List<Color> getColors() {
-        return colors;
+    public List<Color> getColorScheme() {
+        return colorScheme;
     }
 
-    /**
-     * In game field.
-     * Holds information about its type and current state, refer to these field for more information.
-     */
-    public static class Field {
-
-        /**
-         * -1 represents normal field, values >= 0 represent base of player with that index in gameHandler
-         */
-        private final int type;
-
-        /**
-         * -1 represents unoccupied field, values >= 0 represent field occupied by player with that index in gameHandler
-         */
-        private volatile int state = -1;
-
-        public Field(int type) {
-            this.type = type;
-        }
-
-        public int getState() {
-            return state;
-        }
-
-        public void setState(int state) {
-            this.state = state;
-        }
-
-        public int getType() {
-            return type;
-        }
-
-    }
 }

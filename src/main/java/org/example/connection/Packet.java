@@ -1,5 +1,6 @@
 package org.example.connection;
 
+import org.example.ARuleSet;
 import org.example.Pair;
 
 import java.awt.*;
@@ -18,20 +19,22 @@ public class Packet implements Serializable {
 
     private final Codes code;
     private final List<List<Pair>> board;
-    private final Integer value;
+    private final Integer playerId;
     private final String message;
     private final Pair startPos;
     private final Pair endPos;
     private final List<Color> colors;
+    private final ARuleSet ruleSet;
 
     private Packet(PacketBuilder builder) {
         code = builder.code;
         board = builder.board;
-        value = builder.value;
+        playerId = builder.value;
         message = builder.message;
         startPos = builder.start;
         endPos = builder.end;
-        colors = builder.colors;
+        colors = builder.colorScheme;
+        ruleSet = builder.ruleSet;
     }
 
     public Codes getCode() {
@@ -46,8 +49,8 @@ public class Packet implements Serializable {
         return message;
     }
 
-    public Integer getValue() {
-        return value;
+    public Integer getPlayerId() {
+        return playerId;
     }
 
     public Pair getStartPos() {
@@ -58,8 +61,12 @@ public class Packet implements Serializable {
         return endPos;
     }
 
-    public List<Color> getColors() {
+    public List<Color> getColorScheme() {
         return colors;
+    }
+
+    public ARuleSet getRuleSet() {
+        return ruleSet;
     }
 
     /**
@@ -67,17 +74,16 @@ public class Packet implements Serializable {
      */
     public enum Codes implements Serializable {
         INFO,
-        PLAYER_INFO,
-        OPPONENT_TURN,
-        PLAYER_TURN,
-        WRONG_ACTION,
-        ACTION_SUCCESS,
-        ACTION_FAILURE,
-        GAME_END,
         BOARD_UPDATE,
+        PLAYER_TURN,
         PLAYER_MOVE,
+        ACTION_SUCCESS,
+        WRONG_ACTION,
+        ACTION_FAILURE,
+        OPPONENT_TURN,
         OPPONENT_MOVE,
-        PLAYER_COLORS;
+        GAME_START,     //board, playerId, colorScheme
+        GAME_END;
         //Add more actions as needed, then change version inside pom.xml to ensure integrity between client and server
 
         /**
@@ -93,7 +99,8 @@ public class Packet implements Serializable {
         private Integer value = null;
         private Pair start = null;
         private Pair end = null;
-        private List<Color> colors = null;
+        private List<Color> colorScheme = null;
+        private ARuleSet ruleSet = null;
 
         public PacketBuilder code(Codes code) {
             this.code = code;
@@ -125,8 +132,13 @@ public class Packet implements Serializable {
             return this;
         }
 
-        public PacketBuilder colors(List<Color> colors) {
-            this.colors = colors;
+        public PacketBuilder ruleSet(ARuleSet ruleSet) {
+            this.ruleSet = ruleSet;
+            return this;
+        }
+
+        public PacketBuilder colorScheme(List<Color> colorScheme) {
+            this.colorScheme = colorScheme;
             return this;
         }
 

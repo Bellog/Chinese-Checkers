@@ -28,4 +28,9 @@ public final class Pair implements Serializable {
         if (first != pair.first) return false;
         return second == pair.second;
     }
+
+    @Override
+    public String toString() {
+        return "(" + first + ", " + second + ")";
+    }
 }

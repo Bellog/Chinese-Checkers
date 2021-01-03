@@ -63,6 +63,7 @@ public class Server {
             }
         }
         System.out.println("Found all players");
+        gameHandler.gameStart();
     }
 
     public static void main(String[] args) {

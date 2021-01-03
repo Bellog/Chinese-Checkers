@@ -42,7 +42,7 @@ public class GameHandler {
         LOCK.unlock();
 
         new Thread(() -> {
-            if (!server.getNewPlayer()) {
+            if (!server.getNewPlayer()) {   // blocking call
                 LOCK.lock();
                 players.stream().filter(Objects::nonNull)
                         .forEach(p -> sendToPlayer(p, new Packet.PacketBuilder()
@@ -91,6 +91,13 @@ public class GameHandler {
             }
         }
         return board;
+    }
+
+    public void gameStart() {
+        for (int i = 0; i < players.size(); i++) {
+            players.get(i).send(new Packet.PacketBuilder()
+                    .code(Packet.Codes.GAME_START).colorScheme(game.getColorScheme()).value(i).build());
+        }
     }
 
 

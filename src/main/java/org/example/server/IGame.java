@@ -42,5 +42,5 @@ public interface IGame {
      *
      * @return list of colors.
      */
-    List<Color> getColors();
+    List<Color> getColorScheme();
 }

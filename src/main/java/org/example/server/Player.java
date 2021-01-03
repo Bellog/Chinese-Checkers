@@ -55,10 +55,10 @@ public class Player {
                 Packet packet = (Packet) input.get().readUnshared();
                 switch (packet.getCode()) {
                     case BOARD_UPDATE, PLAYER_MOVE -> gameHandler.handleInput(this, packet);
-                    case PLAYER_COLORS -> send(new Packet.PacketBuilder().code(Packet.Codes.PLAYER_COLORS)
-                            .colors(gameHandler.getGame().getColors()).build());
-                    case PLAYER_INFO -> send(new Packet.PacketBuilder().code(Packet.Codes.PLAYER_INFO)
-                            .value(gameHandler.getPlayerId(this)).build());
+//                    case PLAYER_COLORS -> send(new Packet.PacketBuilder().code(Packet.Codes.PLAYER_COLORS)
+//                            .colorScheme(gameHandler.getGame().getColorScheme()).build());
+//                    case PLAYER_INFO -> send(new Packet.PacketBuilder().code(Packet.Codes.PLAYER_INFO)
+//                            .value(gameHandler.getPlayerId(this)).build());
                     default -> send(new Packet.PacketBuilder().code(Packet.Codes.WRONG_ACTION).build());
                 }
             } catch (IOException | ClassNotFoundException | ClassCastException e) {

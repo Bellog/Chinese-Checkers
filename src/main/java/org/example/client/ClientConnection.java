@@ -86,15 +86,10 @@ public class ClientConnection implements IClientConnection {
         new Thread(this::handleServerInput).start();
         new Thread(() -> {
             try {
-
                 output.get().reset();
-                output.get().writeUnshared(new Packet.PacketBuilder().code(Packet.Codes.BOARD_UPDATE).build());
+                output.get().writeUnshared(new Packet.PacketBuilder().code(Packet.Codes.INFO)
+                        .message("remove this lol, it's here so this part of code is not useless").build());
 
-                output.get().reset();
-                output.get().writeUnshared(new Packet.PacketBuilder().code(Packet.Codes.PLAYER_INFO).build());
-
-                output.get().reset();
-                output.get().writeUnshared(new Packet.PacketBuilder().code(Packet.Codes.PLAYER_COLORS).build());
                 isInitialized = true;
             } catch (IOException ioException) {
                 System.out.println("connection error, closing program");
@@ -104,7 +99,7 @@ public class ClientConnection implements IClientConnection {
     }
 
     @Override
-    public void send(Packet packet) {
+    public synchronized void send(Packet packet) {
         try {
             output.get().reset();
             output.get().writeUnshared(packet);
@@ -120,11 +115,11 @@ public class ClientConnection implements IClientConnection {
                 Packet packet = (Packet) input.get().readUnshared();
                 switch (packet.getCode()) {
                     case INFO, WRONG_ACTION, ACTION_FAILURE -> System.out.println(packet.getMessage());
-                    case PLAYER_COLORS -> client.setColors(packet.getColors());
-                    case PLAYER_INFO -> client.setPlayerInfo(packet.getValue());
                     case OPPONENT_TURN -> System.out.println("It's not your turn");
                     case PLAYER_TURN -> System.out.println("It's your turn now!");
                     case ACTION_SUCCESS, BOARD_UPDATE -> client.update(packet.getBoard());
+                    case GAME_START -> client.startGame(packet.getColorScheme(),
+                            packet.getPlayerId());
                     case GAME_END -> {
                         System.out.println(packet.getMessage());
                         socket.close();

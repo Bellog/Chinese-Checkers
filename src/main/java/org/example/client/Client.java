@@ -1,27 +1,23 @@
 package org.example.client;
 
+import org.example.BasicRuleSet;
 import org.example.Pair;
 import org.example.connection.Packet;
 
-import javax.swing.*;
 import java.awt.*;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
-import java.util.ArrayList;
 import java.util.List;
 
-public class Client extends JFrame implements IClient {
+/*
+    This class holds client's logic (i.e which frame to show, etc.)
+ */
+public class Client implements IClient {
 
-    private final List<List<Field>> board = new ArrayList<>();
-    private final ClientConnection conn;
-    private List<Color> colors;
+    private final IClientConnection conn;
+    private final AppFrame frame;
+    private GamePanel gamePanel;
 
-    /**
-     * Class constructor.
-     */
     public Client() {
-        super("Sternhalma");
+        frame = new AppFrame();
 
         conn = new ClientConnection(this);
 
@@ -33,23 +29,7 @@ public class Client extends JFrame implements IClient {
             }
         }
 
-        setAlwaysOnTop(true);
 
-        setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-        setPreferredSize(new Dimension(800, 800));
-        setMinimumSize(new Dimension(800, 800));
-        setMaximumSize(new Dimension(800, 800));
-        getContentPane().setBackground(Color.WHITE);
-
-        try {
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        } catch (IllegalAccessException | InstantiationException | UnsupportedLookAndFeelException | ClassNotFoundException e) {
-            e.printStackTrace();
-        }
-
-        setupBoard();
-
-        setVisible(true);
     }
 
     public static void main(String[] args) {
@@ -58,62 +38,28 @@ public class Client extends JFrame implements IClient {
     }
 
     @Override
-    public List<Color> getColors() {
-        return colors;
-    }
+    public void startGame(List<Color> colorScheme, int playerId) {
+        if (gamePanel != null)
+            frame.remove(gamePanel);
 
-    @Override
-    public void setColors(List<Color> colors) {
-        this.colors = colors;
-    }
+        gamePanel = new GamePanel(playerId, colorScheme, new BasicRuleSet(), this);
 
-    private void setupBoard() {
-
-    }
-
-    @Override
-    public void setPlayerInfo(int value) {
-        setTitle("Sternhalma \"" + value + "\"");
+        //TODO send player color name in addition to playerId
+        frame.setTitle("Sternhalma \"" + playerId + "\"");
+        frame.getContentPane().add(gamePanel);
+        frame.pack();
+        frame.setVisible(true);
     }
 
     @Override
     public void update(List<List<Pair>> board) {
-        if (this.board.isEmpty()) {
-            getContentPane().setLayout(new GridLayout(board.size(), board.get(0).size()));
-            MouseListener m;
-            m = new MouseAdapter() {
-                private Pair first = null;
+        if (gamePanel != null)
+            gamePanel.update(board);
+    }
 
-                @Override
-                public void mouseClicked(MouseEvent e) {
-                    Pair pos = ((Field) e.getSource()).getPosition();
-                    if (first == null) {
-                        first = pos;
-                    } else {
-                        if (!pos.equals(first))
-                            conn.send(new Packet.PacketBuilder().code(Packet.Codes.PLAYER_MOVE)
-                                    .start(first).end(((Field) e.getSource()).getPosition()).build());
-                        first = null;
-                    }
-                }
-            };
-            for (int y = 0; y < board.size(); y++) {
-                this.board.add(new ArrayList<>());
-                for (int x = 0; x < board.get(0).size(); x++) {
-                    var field = new Field(board.get(y).get(x).first, board.get(y).get(x).second,
-                            new Pair(x, y), this);
-                    field.addMouseListener(m);
-                    this.board.get(y).add(field);
-                    getContentPane().add(field);
-                }
-            }
-            repaint();
-        } else {
-            for (int y = 0; y < board.size(); y++) {
-                for (int x = 0; x < board.get(0).size(); x++) {
-                    this.board.get(y).get(x).setState(board.get(y).get(x).first);
-                }
-            }
-        }
+    @Override
+    public void send(Packet packet) {
+        if (conn.isInitialized())
+            conn.send(packet);
     }
 }

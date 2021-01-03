@@ -1,6 +1,7 @@
 package org.example.client;
 
 import org.example.Pair;
+import org.example.connection.Packet;
 
 import java.awt.*;
 import java.util.List;
@@ -9,11 +10,17 @@ import java.util.List;
  * Interface of a class that helps players access the game via server.
  */
 public interface IClient {
-    List<Color> getColors();
 
-    void setColors(List<Color> colors);
-
-    void setPlayerInfo(int value);
+    void startGame(List<Color> colors, int playerId);
 
     void update(List<List<Pair>> board);
+
+    /**
+     * Used by interface components (i.e GamePanel) <br>
+     * Removes IClientConnection dependency from those components/
+     * <br> Internally calls send from IClientConnection
+     *
+     * @param packet packet to send
+     */
+    void send(Packet packet);
 }
