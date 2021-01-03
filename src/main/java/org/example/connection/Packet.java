@@ -1,8 +1,8 @@
 package org.example.connection;
 
-import org.example.ARuleSet;
 import org.example.Pair;
 
+import javax.swing.*;
 import java.awt.*;
 import java.io.Serializable;
 import java.util.List;
@@ -18,30 +18,30 @@ public class Packet implements Serializable {
     private static final long serialVersionUID = 1001L;
 
     private final Codes code;
-    private final List<List<Pair>> board;
+    private final List<List<Integer>> board;
     private final Integer playerId;
     private final String message;
     private final Pair startPos;
     private final Pair endPos;
     private final List<Color> colors;
-    private final ARuleSet ruleSet;
+    private final ImageIcon image;
 
     private Packet(PacketBuilder builder) {
         code = builder.code;
         board = builder.board;
-        playerId = builder.value;
+        playerId = builder.playerId;
         message = builder.message;
         startPos = builder.start;
         endPos = builder.end;
         colors = builder.colorScheme;
-        ruleSet = builder.ruleSet;
+        image = builder.image;
     }
 
     public Codes getCode() {
         return code;
     }
 
-    public List<List<Pair>> getBoard() {
+    public List<List<Integer>> getBoard() {
         return board;
     }
 
@@ -65,8 +65,8 @@ public class Packet implements Serializable {
         return colors;
     }
 
-    public ARuleSet getRuleSet() {
-        return ruleSet;
+    public ImageIcon getImage() {
+        return image;
     }
 
     /**
@@ -94,26 +94,26 @@ public class Packet implements Serializable {
 
     public static class PacketBuilder {
         private Codes code = null;
-        private List<List<Pair>> board = null;
+        private List<List<Integer>> board = null;
         private String message = null;
-        private Integer value = null;
+        private Integer playerId = null;
         private Pair start = null;
         private Pair end = null;
         private List<Color> colorScheme = null;
-        private ARuleSet ruleSet = null;
+        private ImageIcon image;
 
         public PacketBuilder code(Codes code) {
             this.code = code;
             return this;
         }
 
-        public PacketBuilder value(int value) {
-            this.value = value;
+        public PacketBuilder playerId(int playerId) {
+            this.playerId = playerId;
             return this;
         }
 
-        public PacketBuilder board(List<List<Pair>> board) {
-            this.board = List.copyOf(board);
+        public PacketBuilder board(List<List<Integer>> board) {
+            this.board = board;
             return this;
         }
 
@@ -132,8 +132,8 @@ public class Packet implements Serializable {
             return this;
         }
 
-        public PacketBuilder ruleSet(ARuleSet ruleSet) {
-            this.ruleSet = ruleSet;
+        public PacketBuilder image(ImageIcon image) {
+            this.image = image;
             return this;
         }
 

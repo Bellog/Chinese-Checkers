@@ -1,8 +1,8 @@
 package org.example.client;
 
-import org.example.Pair;
 import org.example.connection.Packet;
 
+import javax.swing.*;
 import java.awt.*;
 import java.util.List;
 
@@ -11,9 +11,9 @@ import java.util.List;
  */
 public interface IClient {
 
-    void startGame(List<Color> colors, int playerId);
+    void startGame(List<Color> colors, int playerId, List<List<Integer>> board, ImageIcon boardBackground);
 
-    void update(List<List<Pair>> board);
+    void update(List<List<Integer>> board);
 
     /**
      * Used by interface components (i.e GamePanel) <br>

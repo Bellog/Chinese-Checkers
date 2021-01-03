@@ -119,7 +119,7 @@ public class ClientConnection implements IClientConnection {
                     case PLAYER_TURN -> System.out.println("It's your turn now!");
                     case ACTION_SUCCESS, BOARD_UPDATE -> client.update(packet.getBoard());
                     case GAME_START -> client.startGame(packet.getColorScheme(),
-                            packet.getPlayerId());
+                            packet.getPlayerId(), packet.getBoard(), packet.getImage());
                     case GAME_END -> {
                         System.out.println(packet.getMessage());
                         socket.close();
@@ -130,6 +130,7 @@ public class ClientConnection implements IClientConnection {
                     }
                 }
             } catch (IOException | ClassNotFoundException | ClassCastException e) {
+                e.printStackTrace();
                 System.out.println("connection error, closing program");
                 System.exit(30);
             }

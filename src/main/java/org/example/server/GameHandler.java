@@ -1,8 +1,10 @@
 package org.example.server;
 
-import org.example.Pair;
 import org.example.connection.Packet;
+import org.example.server.gameModes.AbstractGameMode;
+import org.example.server.gameModes.BasicGameMode;
 
+import java.awt.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -13,7 +15,7 @@ import java.util.concurrent.locks.ReentrantLock;
 public class GameHandler {
 
     private final List<Player> players;
-    private final Game game;
+    private final AbstractGameMode game;
     private final String gameVersion;
     private final Server server;
     private final ReentrantLock LOCK = new ReentrantLock();
@@ -21,11 +23,12 @@ public class GameHandler {
 
     /**
      * Class constructor.
+     *
      * @param gameVersion version needed to play the game.
-     * @param server given server.
-     * @param game type of game that will be played.
+     * @param server      given server.
+     * @param game        type of game that will be played.
      */
-    public GameHandler(String gameVersion, Server server, Game game) {
+    public GameHandler(String gameVersion, Server server, BasicGameMode game) {
         this.server = server;
         this.gameVersion = gameVersion;
         this.game = game;
@@ -82,21 +85,17 @@ public class GameHandler {
         return players.indexOf(player);
     }
 
-    public List<List<Pair>> boardAsList() {
-        List<List<Pair>> board = new ArrayList<>();
-        for (int y = 0; y < game.getBoardHeight(); y++) {
-            board.add(new ArrayList<>());
-            for (int x = 0; x < game.getBoardWidth(); x++) {
-                board.get(y).add(game.getFieldInfo(x, y));
-            }
-        }
-        return board;
+    public List<List<Integer>> boardAsList() {
+        return game.getBoard();
     }
 
     public void gameStart() {
         for (int i = 0; i < players.size(); i++) {
+            //TODO get dimension from player
             players.get(i).send(new Packet.PacketBuilder()
-                    .code(Packet.Codes.GAME_START).colorScheme(game.getColorScheme()).value(i).build());
+                    .code(Packet.Codes.GAME_START).colorScheme(game.getColorScheme())
+                    .board(game.getBoard()).playerId(i)
+                    .image(game.getBoardBackground(new Dimension(28, 48))).build());
         }
     }
 
@@ -118,7 +117,7 @@ public class GameHandler {
             sendToPlayer(player, new Packet.PacketBuilder().code(Packet.Codes.OPPONENT_TURN).build());
             return;
         }
-        if (game.getFieldInfo(x0, y0).first != players.indexOf(player)) {
+        if (game.getFieldInfo(x0, y0) != players.indexOf(player)) {
             sendToPlayer(player, new Packet.PacketBuilder().code(Packet.Codes.ACTION_FAILURE)
                     .message("This is not your pawn").build());
             return;
@@ -157,7 +156,7 @@ public class GameHandler {
         new Thread(() -> player.send(packet)).start();
     }
 
-    public Game getGame() {
+    public AbstractGameMode getGame() {
         return game;
     }
 }

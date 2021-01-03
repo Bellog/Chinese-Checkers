@@ -3,6 +3,7 @@ package org.example.server;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
 import org.example.connection.ConnectionHelper;
+import org.example.server.gameModes.BasicGameMode;
 
 import java.io.FileReader;
 import java.io.IOException;
@@ -13,10 +14,6 @@ public class Server {
 
     private final AtomicReference<ServerSocket> serverSocket = new AtomicReference<>();
     private final GameHandler gameHandler;
-    /**
-     * Maximum time server will wait for find a new player, in seconds.
-     */
-    private final int maxTimeout = 30;
 
     public Server() {
 
@@ -28,7 +25,8 @@ public class Server {
 
             try {
                 serverSocket.set(new ServerSocket(ConnectionHelper.DEFAULT_PORT));
-                serverSocket.get().setSoTimeout(maxTimeout * 1000);
+                // Maximum time server will wait for find a new player, in seconds.
+                serverSocket.get().setSoTimeout(30 * 1000);
             } catch (IOException ignored) {
             } finally {
                 if (serverSocket.get() == null) {
@@ -50,7 +48,8 @@ public class Server {
             System.out.println("Failed to create server");
             System.exit(4);
         }
-        gameHandler = new GameHandler(version, this, new Game());
+
+        gameHandler = new GameHandler(version, this, new BasicGameMode());
 
         int currentPlayers = 0;
         while (currentPlayers < gameHandler.getGame().getNumberOfPlayers()) {

@@ -1,9 +1,8 @@
 package org.example.client;
 
-import org.example.BasicRuleSet;
-import org.example.Pair;
 import org.example.connection.Packet;
 
+import javax.swing.*;
 import java.awt.*;
 import java.util.List;
 
@@ -38,11 +37,11 @@ public class Client implements IClient {
     }
 
     @Override
-    public void startGame(List<Color> colorScheme, int playerId) {
+    public void startGame(List<Color> colorScheme, int playerId, List<List<Integer>> board, ImageIcon boardBackground) {
         if (gamePanel != null)
             frame.remove(gamePanel);
 
-        gamePanel = new GamePanel(playerId, colorScheme, new BasicRuleSet(), this);
+        gamePanel = new GamePanel(playerId, colorScheme, board, this, boardBackground);
 
         //TODO send player color name in addition to playerId
         frame.setTitle("Sternhalma \"" + playerId + "\"");
@@ -52,7 +51,7 @@ public class Client implements IClient {
     }
 
     @Override
-    public void update(List<List<Pair>> board) {
+    public void update(List<List<Integer>> board) {
         if (gamePanel != null)
             gamePanel.update(board);
     }
