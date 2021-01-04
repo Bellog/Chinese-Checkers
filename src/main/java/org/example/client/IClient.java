@@ -17,8 +17,7 @@ public interface IClient {
 
     /**
      * Used by interface components (i.e GamePanel) <br>
-     * Removes IClientConnection dependency from those components/
-     * <br> Internally calls send from IClientConnection
+     * Removes IClientConnection dependency from those components
      *
      * @param packet packet to send
      */

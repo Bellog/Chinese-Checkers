@@ -32,9 +32,11 @@ public abstract class AbstractGameMode {
      * <br>This method can used for drawing purposes or as a helper function for getPossibleMovesMethod(Pair) method,
      * It should not define rules for pawn movements.
      * <p></p>
-     * This method should use neighborCheck internally.
+     * This method should use neighborCheck internally and not depend on current state of the game
+     * (using getNeighbors(Pair) for every check achieves that
      * <ul>
-     * Logic in this method determines which field can be neighbors, not whether they are valid neighbors.
+     * Logic in this method determines which field can be neighbors, not whether they are valid neighbors
+     * (i.e whether they are occupied), that should be implemented by getPossibleMoves(Pair) method
      * <br><br>
      * If a neighbor is not valid, it should be a null, so that this method returns arrays of constant size.</ul>
      *
@@ -53,7 +55,7 @@ public abstract class AbstractGameMode {
      */
     protected final Pair neighborCheck(Pair pos, int xOffset, int yOffset) {
         // field at pos + offset is withing bounds and is not null
-        if (pos.first + xOffset < board.get(0).size() && pos.first + xOffset >= 0 &&
+        if (pos.first + xOffset < defaultBoard.get(0).size() && pos.first + xOffset >= 0 &&
             pos.second + yOffset < board.size() && pos.second + yOffset >= 0 &&
             board.get(pos.second + yOffset).get(pos.first + xOffset) != null)
             return new Pair(pos.first + xOffset, pos.second + yOffset);
@@ -92,7 +94,7 @@ public abstract class AbstractGameMode {
     public abstract int winnerId();
 
     public final ImageIcon getBoardBackground(Dimension fieldDim) {
-        var background = new BoardBackgroundGenerator(fieldDim, defaultBoard);
+        var background = new BoardBackgroundGenerator(fieldDim);
         return background.background;
     }
 
@@ -126,39 +128,46 @@ public abstract class AbstractGameMode {
      */
     abstract public List<Color> getColorScheme();
 
-    //TODO make sure that this method is truly generic -> background is correct regardless of fieldDim proportions
-    // currently it may assume that height > widths
-    // USE defaultBoard instead
+    /**
+     * Graphical board background generator.
+     */
     private final class BoardBackgroundGenerator {
 
         private final Dimension fieldDim;
-        private final List<List<Integer>> board;
         private ImageIcon background;
 
-        private BoardBackgroundGenerator(Dimension fieldDim, List<List<Integer>> board) {
-            this.board = board;
+        /**
+         * Instantiates this class and automatically draws background based on information in board and
+         *
+         * @param fieldDim width and height of a single field in client's GUI
+         */
+        private BoardBackgroundGenerator(Dimension fieldDim) {
             this.fieldDim = fieldDim;
             drawBackground();
         }
 
         private void drawBackground() {
-            var background = new BufferedImage(fieldDim.width * board.get(0).size(),
-                    fieldDim.height * board.size(), BufferedImage.TYPE_3BYTE_BGR);
+            var background = new BufferedImage(fieldDim.width * getDefaultBoard().get(0).size(),
+                    fieldDim.height * getDefaultBoard().size(), BufferedImage.TYPE_3BYTE_BGR);
             Graphics2D g = (Graphics2D) background.getGraphics();
-            g.setColor(Color.WHITE);
-            g.fillRect(0, 0, fieldDim.width * board.get(0).size(), fieldDim.height * board.size());
-
-            g.setStroke(new BasicStroke(4));
-            g.setColor(Color.BLACK);
             g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            for (int y = 0; y < board.size(); y++) {
-                for (int x = 0; x < board.get(0).size(); x++) {
-                    if (board.get(y).get(x) == null)
+
+            g.setColor(Color.WHITE);
+            g.fillRect(0, 0, fieldDim.width * getDefaultBoard().get(0).size(),
+                    fieldDim.height * getDefaultBoard().size());
+
+            g.setColor(Color.BLACK);
+            g.setStroke(new BasicStroke(4));
+            //draws background
+            for (int y = 0; y < getDefaultBoard().size(); y++) {
+                for (int x = 0; x < getDefaultBoard().get(0).size(); x++) {
+                    if (getDefaultBoard().get(y).get(x) == null)
                         continue;
-                    var neighs = getNeighbors(new Pair(x, y));
-                    drawBackgroundFieldBase(new Pair(x, y), neighs, g, fieldDim);
+                    drawBackgroundFieldBase(new Pair(x, y), g, fieldDim);
                 }
             }
+
+            //draws lines between fields
             for (int y = 0; y < board.size(); y++) {
                 for (int x = 0; x < board.get(0).size(); x++) {
                     if (board.get(y).get(x) == null)
@@ -176,20 +185,35 @@ public abstract class AbstractGameMode {
             this.background = new ImageIcon(background);
         }
 
-        private void drawBackgroundFieldBase(Pair pos, List<Pair> neighs, Graphics2D g, Dimension fieldDim) {
+        /**
+         * Draws backgrounds around a field if it is a base field
+         *
+         * @param pos      position of a field that may be a base field
+         * @param g        graphics to draw on
+         * @param fieldDim field dimension to calculate positions
+         */
+        private void drawBackgroundFieldBase(Pair pos, Graphics2D g, Dimension fieldDim) {
             if (board.get(pos.second).get(pos.first) >= 0) { // field is a base
                 var gg = g.create();
-
+                List<Pair> neighs = getNeighbors(pos);
                 for (int i = 0; i < neighs.size() - 1; i++) {
-
                     drawBackgroundFieldBaseTile(pos, neighs.get(i), neighs.get(i + 1), gg, fieldDim);
                 }
-                if (neighs.size() > 2)  // n,0 wont happen in loop above if n > 1
+                if (neighs.size() > 2)  // triangle between pos, last item and first item
                     drawBackgroundFieldBaseTile(pos, neighs.get(neighs.size() - 1), neighs.get(0), gg, fieldDim);
                 gg.dispose();
             }
         }
 
+        /**
+         * Draws background triangle between pos, neigh0, neigh1. Color is based on pos
+         *
+         * @param pos      position of 1st vertex
+         * @param neigh0   position of 2nd vertex
+         * @param neigh1   position of 3rd vertex
+         * @param g        graphics to draw on
+         * @param fieldDim field dimension to calculate positions
+         */
         private void drawBackgroundFieldBaseTile(Pair pos, Pair neigh0, Pair neigh1, Graphics g, Dimension fieldDim) {
             if (neigh0 == null || neigh1 == null)
                 return;
@@ -200,6 +224,7 @@ public abstract class AbstractGameMode {
             int[] ys = {pos.second * fieldDim.height + fieldDim.height / 2,
                     neigh0.second * fieldDim.height + fieldDim.height / 2,
                     neigh1.second * fieldDim.height + fieldDim.height / 2};
+
             g.setColor(getColorScheme().get(defaultBoard.get(pos.second).get(pos.first)));
             g.fillPolygon(xs, ys, 3);
         }

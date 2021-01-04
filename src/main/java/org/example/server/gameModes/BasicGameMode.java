@@ -141,7 +141,7 @@ public class BasicGameMode extends AbstractGameMode {
     @Override
     public boolean move(int x0, int y0, int x1, int y1) {
         int state = getBoard().get(y1).get(x1);
-        if (state < 0 || state == defaultBoard.get(y0).get(x0)) {
+        if (state == -1) {
             board.get(y1).set(x1, board.get(y0).get(x0));
             board.get(y0).set(x0, state);
             return true;
