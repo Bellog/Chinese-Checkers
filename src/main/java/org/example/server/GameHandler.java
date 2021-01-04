@@ -1,8 +1,10 @@
 package org.example.server;
 
+import org.example.Pair;
 import org.example.connection.Packet;
 import org.example.server.gameModes.AbstractGameMode;
 import org.example.server.gameModes.BasicGameMode;
+import org.example.server.gameModes.StandardGameMode;
 
 import java.awt.*;
 import java.util.ArrayList;
@@ -28,7 +30,7 @@ public class GameHandler {
      * @param server      given server.
      * @param game        type of game that will be played.
      */
-    public GameHandler(String gameVersion, Server server, BasicGameMode game) {
+    public GameHandler(String gameVersion, Server server, StandardGameMode game) {
         this.server = server;
         this.gameVersion = gameVersion;
         this.game = game;
@@ -105,25 +107,25 @@ public class GameHandler {
         switch (packet.getCode()) {
             case BOARD_UPDATE -> sendToPlayer(player, new Packet.PacketBuilder()
                     .code(Packet.Codes.BOARD_UPDATE).board(boardAsList()).build());
-            case PLAYER_MOVE -> move(player, packet.getStartPos().first, packet.getStartPos().second,
-                    packet.getEndPos().first, packet.getEndPos().second);
+            case PLAYER_MOVE -> move(player, packet.getStartPos(), packet.getEndPos());
+            //case TURN_END -> ;
         }
         LOCK.unlock();
     }
 
-    private void move(Player player, int x0, int y0, int x1, int y1) {
-        System.out.println(players.indexOf(player) + ": (" + x0 + ", " + y0 + ") -> (" + x1 + ", " + y1 + ")");
+    private void move(Player player, Pair p0, Pair p1) {
+        System.out.println(players.indexOf(player) + ": (" + p0.first + ", " + p0.second + ") -> (" + p1.first + ", " + p1.second + ")");
         if (players.indexOf(player) != currentPlayer) {
             sendToPlayer(player, new Packet.PacketBuilder().code(Packet.Codes.OPPONENT_TURN).build());
             return;
         }
-        if (game.getFieldInfo(x0, y0) != players.indexOf(player)) {
+        if (game.getFieldInfo(p0.first, p0.second) != players.indexOf(player)) {
             sendToPlayer(player, new Packet.PacketBuilder().code(Packet.Codes.ACTION_FAILURE)
                     .message("This is not your pawn").build());
             return;
         }
 
-        if (game.move(x0, y0, x1, y1)) {
+        if (game.move(p0, p1)) {
             if (game.hasWinner()) {
                 for (int i = 0; i < game.getNumberOfPlayers(); i++)
                     if (i != currentPlayer)

@@ -5,7 +5,7 @@ import org.example.Pair;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.util.ArrayList;
+import java.util.*;
 import java.util.List;
 
 /**
@@ -15,6 +15,8 @@ public abstract class AbstractGameMode {
     protected final List<List<Integer>> board = new ArrayList<>();
     protected final int maxPlayers;
     protected final List<List<Integer>> defaultBoard = getDefaultBoard();
+    public final Map<Integer, Map<Integer, Integer>> playerBases = new TreeMap();
+    public List<Pair> tempMoveList = new ArrayList<>();
 
     /**
      * Every concrete child should implement logic based on maxPlayers
@@ -116,7 +118,15 @@ public abstract class AbstractGameMode {
      *
      * @return true if move is successful, false if not
      */
-    abstract public boolean move(int x0, int y0, int x1, int y1);
+    abstract public boolean move(Pair p0, Pair p1);
+
+    public void endTurn() { tempMoveList.clear(); }
+
+    public void rollBack() {
+        if (tempMoveList.isEmpty())
+            return;
+        Collections.swap(tempMoveList, tempMoveList.size() - 1, 0);
+    }
 
     abstract public boolean hasWinner();
 
@@ -147,20 +157,20 @@ public abstract class AbstractGameMode {
         }
 
         private void drawBackground() {
-            var background = new BufferedImage(fieldDim.width * getDefaultBoard().get(0).size(),
-                    fieldDim.height * getDefaultBoard().size(), BufferedImage.TYPE_3BYTE_BGR);
+            var background = new BufferedImage(fieldDim.width * defaultBoard.get(0).size(),
+                    fieldDim.height * defaultBoard.size(), BufferedImage.TYPE_3BYTE_BGR);
             Graphics2D g = (Graphics2D) background.getGraphics();
             g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
             g.setColor(Color.WHITE);
-            g.fillRect(0, 0, fieldDim.width * getDefaultBoard().get(0).size(),
-                    fieldDim.height * getDefaultBoard().size());
+            g.fillRect(0, 0, fieldDim.width * defaultBoard.get(0).size(),
+                    fieldDim.height * defaultBoard.size());
 
             g.setColor(Color.BLACK);
             g.setStroke(new BasicStroke(4));
             //draws background
-            for (int y = 0; y < getDefaultBoard().size(); y++) {
-                for (int x = 0; x < getDefaultBoard().get(0).size(); x++) {
+            for (int y = 0; y < defaultBoard.size(); y++) {
+                for (int x = 0; x < defaultBoard.get(0).size(); x++) {
                     if (getDefaultBoard().get(y).get(x) == null)
                         continue;
                     drawBackgroundFieldBase(new Pair(x, y), g, fieldDim);

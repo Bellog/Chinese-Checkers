@@ -82,8 +82,12 @@ public class Packet implements Serializable {
         ACTION_FAILURE,
         OPPONENT_TURN,
         OPPONENT_MOVE,
+        TURN_END,
+        TURN_ROLLBACK,
         GAME_START,     //board, playerId, colorScheme
-        GAME_END;
+        GAME_END,
+        GAME_PAUSE,
+        GAME_RESUME;
         //Add more actions as needed, then change version inside pom.xml to ensure integrity between client and server
 
         /**
