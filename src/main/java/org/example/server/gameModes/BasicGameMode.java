@@ -5,6 +5,7 @@ import org.example.Pair;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
@@ -21,13 +22,14 @@ public class BasicGameMode extends AbstractGameMode {
     public BasicGameMode(int maxPlayers) {
         super(maxPlayers);
         setPlayerBases();
+        setPlayerNumbers();
         // maxPlayers can be only 2,3,4 or 6
-        if (maxPlayers != 2 && maxPlayers != 3 && maxPlayers != 4 && maxPlayers != 6)
+        if (!possiblePlayerNumbers.contains(maxPlayers))
             return;
 
-        for (int y = 0; y < 17; y++) {
+        for (int y = 0; y < defaultBoard.size(); y++) {
             board.add(new ArrayList<>());
-            for (int x = 0; x < 25; x++) {
+            for (int x = 0; x < defaultBoard.get(0).size(); x++) {
                 if (defaultBoard.get(y).get(x) != null && defaultBoard.get(y).get(x) > -2) {
                     if (defaultBoard.get(y).get(x) == -1)
                         board.get(y).add(-1);
@@ -36,6 +38,13 @@ public class BasicGameMode extends AbstractGameMode {
                     board.get(y).add(null);
             }
         }
+    }
+
+    protected void setPlayerNumbers () {
+        possiblePlayerNumbers.add(2);
+        possiblePlayerNumbers.add(3);
+        possiblePlayerNumbers.add(4);
+        possiblePlayerNumbers.add(6);
     }
 
     /*
@@ -60,7 +69,10 @@ public class BasicGameMode extends AbstractGameMode {
 
      */
 
-    private void setPlayerBases () {
+    /**
+     * Determines which starting fields belong to which player, according to number of players
+     */
+    protected void setPlayerBases () {
         playerBases.put(2, new TreeMap<>()
         {{
             put(0, 0); put(1, -1); put(2, -1); put(3, 1); put(4, -1); put(5, -1);

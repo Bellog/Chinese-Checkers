@@ -8,6 +8,10 @@ import java.util.stream.Collectors;
 
 public class StandardGameMode extends BasicGameMode {
 
+    public StandardGameMode (int maxPlayers) {
+        super(maxPlayers);
+    }
+
     public List<Pair> getPossibleMoves(Pair pos) {
         // if field state is -1 and is a neighbor then player can move there
         // if field state is -1 and is across a non-negative neighbor field, then player can move there
