@@ -134,7 +134,7 @@ public abstract class AbstractGameMode {
     private final class BoardBackgroundGenerator {
 
         private final Dimension fieldDim;
-        private ImageIcon background;
+        private final ImageIcon background;
 
         /**
          * Instantiates this class and automatically draws background based on information in board and
@@ -143,22 +143,22 @@ public abstract class AbstractGameMode {
          */
         private BoardBackgroundGenerator(Dimension fieldDim) {
             this.fieldDim = fieldDim;
-            drawBackground();
-        }
 
-        private void drawBackground() {
-            var background = new BufferedImage(fieldDim.width * getDefaultBoard().get(0).size(),
-                    fieldDim.height * getDefaultBoard().size(), BufferedImage.TYPE_3BYTE_BGR);
+            var background = new BufferedImage(fieldDim.width * (defaultBoard.get(0).size() + 2),
+                    fieldDim.height * (defaultBoard.size() + 2), BufferedImage.TYPE_3BYTE_BGR);
             Graphics2D g = (Graphics2D) background.getGraphics();
             g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
             g.setColor(Color.WHITE);
-            g.fillRect(0, 0, fieldDim.width * getDefaultBoard().get(0).size(),
-                    fieldDim.height * getDefaultBoard().size());
+            g.fillRect(0, 0, background.getWidth(), background.getHeight());
 
-            g.setColor(Color.BLACK);
-            g.setStroke(new BasicStroke(4));
-            //draws background
+            //offsets graphics by border
+            drawBackground(g);
+
+            this.background = new ImageIcon(background);
+        }
+
+        private void drawBackground(Graphics2D g) {
             for (int y = 0; y < getDefaultBoard().size(); y++) {
                 for (int x = 0; x < getDefaultBoard().get(0).size(); x++) {
                     if (getDefaultBoard().get(y).get(x) == null)
@@ -167,22 +167,24 @@ public abstract class AbstractGameMode {
                 }
             }
 
+            g.setColor(Color.BLACK);
+            g.setStroke(new BasicStroke(4));
+
             //draws lines between fields
-            for (int y = 0; y < board.size(); y++) {
-                for (int x = 0; x < board.get(0).size(); x++) {
-                    if (board.get(y).get(x) == null)
+            for (int y = 0; y < defaultBoard.size(); y++) {
+                for (int x = 0; x < defaultBoard.get(0).size(); x++) {
+                    if (defaultBoard.get(y).get(x) == null)
                         continue;
                     var neighs = getNeighbors(new Pair(x, y));
                     for (Pair p : neighs) {
                         if (p != null)
-                            g.drawLine(x * fieldDim.width + fieldDim.width / 2,
-                                    y * fieldDim.height + fieldDim.height / 2,
-                                    p.first * fieldDim.width + fieldDim.width / 2,
-                                    p.second * fieldDim.height + fieldDim.height / 2);
+                            g.drawLine((x + 1) * fieldDim.width + fieldDim.width / 2,
+                                    (y + 1) * fieldDim.height + fieldDim.height / 2,
+                                    (p.first + 1) * fieldDim.width + fieldDim.width / 2,
+                                    (p.second + 1) * fieldDim.height + fieldDim.height / 2);
                     }
                 }
             }
-            this.background = new ImageIcon(background);
         }
 
         /**
@@ -193,15 +195,13 @@ public abstract class AbstractGameMode {
          * @param fieldDim field dimension to calculate positions
          */
         private void drawBackgroundFieldBase(Pair pos, Graphics2D g, Dimension fieldDim) {
-            if (board.get(pos.second).get(pos.first) >= 0) { // field is a base
-                var gg = g.create();
+            if (defaultBoard.get(pos.second).get(pos.first) >= 0) { // field is a base
                 List<Pair> neighs = getNeighbors(pos);
                 for (int i = 0; i < neighs.size() - 1; i++) {
-                    drawBackgroundFieldBaseTile(pos, neighs.get(i), neighs.get(i + 1), gg, fieldDim);
+                    drawBackgroundFieldBaseTile(pos, neighs.get(i), neighs.get(i + 1), g, fieldDim);
                 }
                 if (neighs.size() > 2)  // triangle between pos, last item and first item
-                    drawBackgroundFieldBaseTile(pos, neighs.get(neighs.size() - 1), neighs.get(0), gg, fieldDim);
-                gg.dispose();
+                    drawBackgroundFieldBaseTile(pos, neighs.get(neighs.size() - 1), neighs.get(0), g, fieldDim);
             }
         }
 
@@ -218,12 +218,12 @@ public abstract class AbstractGameMode {
             if (neigh0 == null || neigh1 == null)
                 return;
 
-            int[] xs = {pos.first * fieldDim.width + fieldDim.width / 2,
-                    neigh0.first * fieldDim.width + fieldDim.width / 2,
-                    neigh1.first * fieldDim.width + fieldDim.width / 2};
-            int[] ys = {pos.second * fieldDim.height + fieldDim.height / 2,
-                    neigh0.second * fieldDim.height + fieldDim.height / 2,
-                    neigh1.second * fieldDim.height + fieldDim.height / 2};
+            int[] xs = {(pos.first + 1) * fieldDim.width + fieldDim.width / 2,
+                    (neigh0.first + 1) * fieldDim.width + fieldDim.width / 2,
+                    (neigh1.first + 1) * fieldDim.width + fieldDim.width / 2};
+            int[] ys = {(pos.second + 1) * fieldDim.height + fieldDim.height / 2,
+                    (neigh0.second + 1) * fieldDim.height + fieldDim.height / 2,
+                    (neigh1.second + 1) * fieldDim.height + fieldDim.height / 2};
 
             g.setColor(getColorScheme().get(defaultBoard.get(pos.second).get(pos.first)));
             g.fillPolygon(xs, ys, 3);

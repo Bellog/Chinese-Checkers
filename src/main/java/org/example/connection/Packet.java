@@ -19,6 +19,7 @@ public class Packet implements Serializable {
 
     private final Codes code;
     private final List<List<Integer>> board;
+    private final List<List<String>> playerInfo;
     private final Integer playerId;
     private final String message;
     private final Pair startPos;
@@ -29,6 +30,7 @@ public class Packet implements Serializable {
     private Packet(PacketBuilder builder) {
         code = builder.code;
         board = builder.board;
+        playerInfo = builder.playerInfo;
         playerId = builder.playerId;
         message = builder.message;
         startPos = builder.start;
@@ -43,6 +45,10 @@ public class Packet implements Serializable {
 
     public List<List<Integer>> getBoard() {
         return board;
+    }
+
+    public List<List<String>> getPlayerInfo() {
+        return playerInfo;
     }
 
     public String getMessage() {
@@ -75,8 +81,9 @@ public class Packet implements Serializable {
     public enum Codes implements Serializable {
         INFO,
         BOARD_UPDATE,
-        PLAYER_TURN,
-        PLAYER_MOVE,
+        TURN_START,
+        TURN_MOVE,
+        TURN_END,
         ACTION_SUCCESS,
         WRONG_ACTION,
         ACTION_FAILURE,
@@ -95,6 +102,7 @@ public class Packet implements Serializable {
     public static class PacketBuilder {
         private Codes code = null;
         private List<List<Integer>> board = null;
+        private List<List<String>> playerInfo = null;
         private String message = null;
         private Integer playerId = null;
         private Pair start = null;
@@ -114,6 +122,11 @@ public class Packet implements Serializable {
 
         public PacketBuilder board(List<List<Integer>> board) {
             this.board = board;
+            return this;
+        }
+
+        public PacketBuilder playerInfo(List<List<String>> playerInfo) {
+            this.playerInfo = playerInfo;
             return this;
         }
 

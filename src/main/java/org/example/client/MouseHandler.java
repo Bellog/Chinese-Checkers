@@ -18,6 +18,7 @@ public abstract class MouseHandler extends MouseAdapter {
      * Dimensions of a field in client GUI, used to determine position of a field that player clicked
      */
     private final Dimension fieldDim;
+    private final Pair offset;
     /**
      * In GUI, each field is a circle, this object helps determining whether a mouseclick happened within a field
      * or outside of it.
@@ -32,39 +33,57 @@ public abstract class MouseHandler extends MouseAdapter {
      * @param diameter diameter of a clickable circle withing a single field
      */
     public MouseHandler(Dimension fieldDim, int diameter) {
+        this(fieldDim, diameter, new Pair(0, 0));
+    }
+
+    /**
+     * Instantiates this class with specified field dimension, diameter and offset
+     *
+     * @param fieldDim dimension of a single field
+     * @param diameter diameter of a clickable circle withing a single field
+     * @param offset   use this if fields are shifted by offset pixels
+     */
+    public MouseHandler(Dimension fieldDim, int diameter, Pair offset) {
+        this.offset = offset;
         this.fieldDim = fieldDim;
         fieldDisk = new Ellipse2D.Double(((double) fieldDim.width - diameter) / 2,
                 ((double) fieldDim.height - diameter) / 2, diameter, diameter);
     }
 
     private Pair getPosition(Point p) {
-        System.out.println(fieldDisk.contains(p.x % fieldDim.width, p.y % fieldDim.height) + " - " +
-                           p.x % fieldDim.width + " and " + p.y % fieldDim.height);
         if (fieldDisk.contains(p.x % fieldDim.width, p.y % fieldDim.height))
-            return new Pair(p.x / fieldDim.width, p.y / fieldDim.height);
+            return new Pair((p.x - offset.first) / fieldDim.width, (p.y - offset.second) / fieldDim.height);
         else
             return null;
     }
 
     @Override
     public void mousePressed(MouseEvent e) {
-        System.out.print("\nstart: ");
         start = getPosition(e.getPoint());
+        setFieldSelection(start, true);
+
     }
 
     @Override
     public void mouseReleased(MouseEvent e) {
-        System.out.println("check 1");
         if (start == null || !startCheck(start))
             return; //player did not press on any field, or pressed on a field that they do not have a pawn on
         Pair end = getPosition(e.getPoint());
-        System.out.println("check 2");
         if (end == null || start.equals(end))
             return; //no need to send a movement that does not do anything
-        System.out.println("check 3");
         if (endCheck(end))
-            send(new Packet.PacketBuilder().code(Packet.Codes.PLAYER_MOVE).start(start).end(end).build());
+            send(new Packet.PacketBuilder().code(Packet.Codes.TURN_MOVE).start(start).end(end).build());
+        setFieldSelection(start, false);
     }
+
+    /**
+     * If gui implements selection of a field when play clicks it, it should be done through this method. <br>
+     * This method is abstract so that this class does not depend on implementation of board array.
+     *
+     * @param pos      position to set selection to
+     * @param selected selection state
+     */
+    protected abstract void setFieldSelection(Pair pos, boolean selected);
 
     /**
      * Checks whether a field is occupied by the player. <br>

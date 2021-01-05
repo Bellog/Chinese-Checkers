@@ -5,6 +5,7 @@ import org.example.connection.Packet;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,7 +23,7 @@ public class GamePanel extends JPanel {
         this.playerId = playerId;
         this.colorScheme = colorScheme;
         this.client = client;
-        this.boardBackground = boardBackground;
+        this.boardBackground = cropImage(boardBackground);
 
         for (int y = 0; y < board.size(); y++) {
             this.board.add(new ArrayList<>());
@@ -38,8 +39,30 @@ public class GamePanel extends JPanel {
         setVisible(true);
     }
 
+    /**
+     * When server send a board background it has border of 1 field in each dimension. this method remover
+     * vertical border.
+     *
+     * @param imageIcon image to crop
+     * @return cropped image
+     */
+    private ImageIcon cropImage(ImageIcon imageIcon) {
+        BufferedImage temp = new BufferedImage(imageIcon.getIconWidth(),
+                imageIcon.getIconHeight(), BufferedImage.TYPE_3BYTE_BGR);
+        imageIcon.paintIcon(null, temp.getGraphics(), 0, 0);
+
+        return new ImageIcon(temp.getSubimage(0, fieldDim.height, imageIcon.getIconWidth(),
+                imageIcon.getIconHeight() - 2 * fieldDim.height));
+    }
+
     private void initMouseListener() {
-        addMouseListener(new MouseHandler(fieldDim, diameter) {
+        // all fields are offset by a single field in x axis, see cropImage method
+        addMouseListener(new MouseHandler(fieldDim, diameter, new Pair(fieldDim.width, 0)) {
+            @Override
+            protected void setFieldSelection(Pair pos, boolean selected) {
+                board.get(pos.second).get(pos.first).setSelected(selected);
+            }
+
             @Override
             protected boolean startCheck(Pair pos) {
                 return board.get(pos.second).get(pos.first).getState() == playerId;
@@ -59,7 +82,7 @@ public class GamePanel extends JPanel {
 
     @Override
     public Dimension getPreferredSize() {
-        return new Dimension(board.get(0).size() * fieldDim.width, board.size() * fieldDim.height);
+        return new Dimension(boardBackground.getIconWidth(), boardBackground.getIconHeight());
     }
 
     void update(List<List<Integer>> board) {
@@ -76,9 +99,10 @@ public class GamePanel extends JPanel {
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
 
-        var g2d = (Graphics2D) g;
+        boardBackground.paintIcon(null, g, 0, 0);
+
+        var g2d = (Graphics2D) g.create();
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        g2d.drawImage(boardBackground.getImage(), 0, 0, boardBackground.getIconWidth(), boardBackground.getIconHeight(), null);
         for (int y = 0; y < board.size(); y++) {
             for (int x = 0; x < board.get(0).size(); x++) {
                 if (board.get(y).get(x) == null)
@@ -89,14 +113,16 @@ public class GamePanel extends JPanel {
                 else
                     g2d.setColor(Color.WHITE);
 
-                g2d.fillOval(x * fieldDim.width, y * fieldDim.height + (fieldDim.height - diameter) / 2, diameter, diameter);
+                g2d.fillOval((x + 1) * fieldDim.width,
+                        y * fieldDim.height + (fieldDim.height - diameter) / 2, diameter, diameter);
 
                 g2d.setColor(Color.BLACK);
                 if (board.get(y).get(x).isSelected())
-                    g2d.setStroke(new BasicStroke(4));
+                    g2d.setStroke(new BasicStroke(6));
                 else
                     g2d.setStroke(new BasicStroke(2));
-                g2d.drawOval(x * fieldDim.width, y * fieldDim.height + (fieldDim.height - diameter) / 2, diameter, diameter);
+                g2d.drawOval((x + 1) * fieldDim.width,
+                        y * fieldDim.height + (fieldDim.height - diameter) / 2, diameter, diameter);
             }
         }
     }

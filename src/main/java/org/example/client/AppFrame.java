@@ -1,7 +1,10 @@
 package org.example.client;
 
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 import java.awt.*;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 
 public class AppFrame extends JFrame {
 
@@ -10,10 +13,24 @@ public class AppFrame extends JFrame {
 
         new Timer(1000 / 30, v -> repaint()).start();
 
-        setAlwaysOnTop(true);
+        setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
 
-        setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-        getContentPane().setBackground(Color.WHITE);
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                int option = JOptionPane.showOptionDialog(AppFrame.this,
+                        "Are you sure you want to quit?", "You may not be able to rejoin later!",
+                        JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, null, null);
+                if (option == JOptionPane.YES_OPTION)
+                    System.exit(0);
+            }
+        });
+
+        var contentPane = new JPanel();
+        contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
+        contentPane.setLayout(new BoxLayout(contentPane, BoxLayout.X_AXIS));
+        contentPane.setBackground(Color.WHITE);
+        setContentPane(contentPane);
 
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
@@ -23,9 +40,5 @@ public class AppFrame extends JFrame {
 
         pack();
     }
-
-//    public static void main(String[] args) {
-//        new AppFrame();
-//    }
 
 }

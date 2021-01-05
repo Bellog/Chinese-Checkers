@@ -72,8 +72,7 @@ public class ClientConnection implements IClientConnection {
             }
             c = (ConnectionHelper) input.get().readUnshared();
             if (c.message == ConnectionHelper.Message.VERSION_MISMATCH) {
-                System.out.println("Version mismatch");
-                System.out.println(version + "; " + c.version);
+                System.out.print("Version mismatch: your version: " + version + ", server version: " + c.version);
                 input.get().close();
                 output.get().close();
                 socket.close();
@@ -116,10 +115,10 @@ public class ClientConnection implements IClientConnection {
                 switch (packet.getCode()) {
                     case INFO, WRONG_ACTION, ACTION_FAILURE -> System.out.println(packet.getMessage());
                     case OPPONENT_TURN -> System.out.println("It's not your turn");
-                    case PLAYER_TURN -> System.out.println("It's your turn now!");
+                    case TURN_START -> System.out.println("It's your turn now!");
                     case ACTION_SUCCESS, BOARD_UPDATE -> client.update(packet.getBoard());
                     case GAME_START -> client.startGame(packet.getColorScheme(),
-                            packet.getPlayerId(), packet.getBoard(), packet.getImage());
+                            packet.getPlayerId(), packet.getBoard(), packet.getImage(), packet.getPlayerInfo());
                     case GAME_END -> {
                         System.out.println(packet.getMessage());
                         socket.close();

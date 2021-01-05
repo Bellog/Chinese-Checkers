@@ -11,7 +11,8 @@ import java.util.List;
  */
 public interface IClient {
 
-    void startGame(List<Color> colors, int playerId, List<List<Integer>> board, ImageIcon boardBackground);
+    void startGame(List<Color> colors, int playerId, List<List<Integer>> board,
+                   ImageIcon boardBackground, List<List<String>> playerInfo);
 
     void update(List<List<Integer>> board);
 

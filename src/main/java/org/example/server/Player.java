@@ -54,7 +54,7 @@ public class Player {
             try {
                 Packet packet = (Packet) input.get().readUnshared();
                 switch (packet.getCode()) {
-                    case BOARD_UPDATE, PLAYER_MOVE -> gameHandler.handleInput(this, packet);
+                    case BOARD_UPDATE, TURN_MOVE -> gameHandler.handleInput(this, packet);
 //                    case PLAYER_COLORS -> send(new Packet.PacketBuilder().code(Packet.Codes.PLAYER_COLORS)
 //                            .colorScheme(gameHandler.getGame().getColorScheme()).build());
 //                    case PLAYER_INFO -> send(new Packet.PacketBuilder().code(Packet.Codes.PLAYER_INFO)

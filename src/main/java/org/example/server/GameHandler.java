@@ -95,8 +95,32 @@ public class GameHandler {
             players.get(i).send(new Packet.PacketBuilder()
                     .code(Packet.Codes.GAME_START).colorScheme(game.getColorScheme())
                     .board(game.getBoard()).playerId(i)
-                    .image(game.getBoardBackground(new Dimension(28, 48))).build());
+                    .image(game.getBoardBackground(new Dimension(28, 48)))
+                    .playerInfo(generatePlayerInfo(i))
+                    .build());
         }
+    }
+
+    private List<List<String>> generatePlayerInfo(int playerId) {
+        List<List<String>> list = new ArrayList<>();
+
+        for (int i = 0; i < game.getNumberOfPlayers(); i++) {
+            list.add(new ArrayList<>());
+
+            if (i == playerId)
+                list.get(i).add("Player " + (i + 1) + " (You)");
+            else
+                list.get(i).add("Player " + (i + 1));
+
+            list.get(i).add("-"); //position
+        }
+
+        List<String> header = new ArrayList<>();
+        header.add("Player");
+        header.add("Pos");
+        list.add(0, header);
+
+        return list;
     }
 
 
@@ -105,14 +129,13 @@ public class GameHandler {
         switch (packet.getCode()) {
             case BOARD_UPDATE -> sendToPlayer(player, new Packet.PacketBuilder()
                     .code(Packet.Codes.BOARD_UPDATE).board(boardAsList()).build());
-            case PLAYER_MOVE -> move(player, packet.getStartPos().first, packet.getStartPos().second,
+            case TURN_MOVE -> move(player, packet.getStartPos().first, packet.getStartPos().second,
                     packet.getEndPos().first, packet.getEndPos().second);
         }
         LOCK.unlock();
     }
 
     private void move(Player player, int x0, int y0, int x1, int y1) {
-        System.out.println(players.indexOf(player) + ": (" + x0 + ", " + y0 + ") -> (" + x1 + ", " + y1 + ")");
         if (players.indexOf(player) != currentPlayer) {
             sendToPlayer(player, new Packet.PacketBuilder().code(Packet.Codes.OPPONENT_TURN).build());
             return;
@@ -146,9 +169,9 @@ public class GameHandler {
                     .code(Packet.Codes.ACTION_FAILURE).message("This field is already set").build());
             return;
         }
-        //move to next player and notify them
-        currentPlayer = (currentPlayer + 1) % game.getNumberOfPlayers();
-        sendToPlayer(players.get(currentPlayer), new Packet.PacketBuilder().code(Packet.Codes.PLAYER_TURN).build());
+        //this is reworked in different commit
+//        currentPlayer = (currentPlayer + 1) % game.getNumberOfPlayers();
+//        sendToPlayer(players.get(currentPlayer), new Packet.PacketBuilder().code(Packet.Codes.TURN_START).build());
     }
 
     private void sendToPlayer(Player player, Packet packet) {

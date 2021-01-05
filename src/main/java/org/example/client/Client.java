@@ -12,12 +12,11 @@ import java.util.List;
 public class Client implements IClient {
 
     private final IClientConnection conn;
-    private final AppFrame frame;
+    private AppFrame frame;
     private GamePanel gamePanel;
+    private SidePanel sidePanel;
 
     public Client() {
-        frame = new AppFrame();
-
         conn = new ClientConnection(this);
 
         while (!conn.isInitialized()) {
@@ -27,8 +26,6 @@ public class Client implements IClient {
                 e.printStackTrace();
             }
         }
-
-
     }
 
     public static void main(String[] args) {
@@ -37,16 +34,20 @@ public class Client implements IClient {
     }
 
     @Override
-    public void startGame(List<Color> colorScheme, int playerId, List<List<Integer>> board, ImageIcon boardBackground) {
-        if (gamePanel != null)
-            frame.remove(gamePanel);
-
+    public void startGame(List<Color> colorScheme, int playerId, List<List<Integer>> board, ImageIcon boardBackground, List<List<String>> playerInfo) {
+        frame = new AppFrame();
         gamePanel = new GamePanel(playerId, colorScheme, board, this, boardBackground);
+        sidePanel = new SidePanel(playerInfo, this, colorScheme, gamePanel.getPreferredSize().height);
 
-        //TODO send player color name in addition to playerId
-        frame.setTitle("Sternhalma \"" + playerId + "\"");
         frame.getContentPane().add(gamePanel);
+        Component c = Box.createHorizontalStrut(5);
+        c.setBackground(Color.BLACK);
+        c.setForeground(Color.BLACK);
+        frame.getContentPane().add(c);
+        frame.getContentPane().add(sidePanel);
+
         frame.pack();
+        frame.setResizable(false);
         frame.setVisible(true);
     }
 
