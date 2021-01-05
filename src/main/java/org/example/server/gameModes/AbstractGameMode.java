@@ -16,6 +16,7 @@ public abstract class AbstractGameMode {
     protected final int maxPlayers;
     protected final List<List<Integer>> defaultBoard = getDefaultBoard();
     protected final Map<Integer, Map<Integer, Integer>> playerBases;
+    protected final List<List<Pair>> winCondition;
     public List<Pair> tempMoveList = new ArrayList<>();
 
     /**
@@ -28,13 +29,14 @@ public abstract class AbstractGameMode {
         //this.possiblePlayerNumbers = new ArrayList<>();
         this.board = new ArrayList<>();
         this.playerBases = new TreeMap<>();
+        this.winCondition = new ArrayList<>();
     }
 
     //protected abstract void setPlayerNumbers();
 
     protected abstract void setPlayerBases();
 
-    //protected static List<Integer> getPlayerNumbers() {return new ArrayList<>();}
+    protected abstract void setWinCondition();
 
     protected abstract List<List<Integer>> getDefaultBoard();
 
@@ -102,7 +104,6 @@ public abstract class AbstractGameMode {
      *
      * @return winner's id, -1 if there is no winner
      */
-    public abstract int winnerId();
 
     public final ImageIcon getBoardBackground(Dimension fieldDim) {
         var background = new BoardBackgroundGenerator(fieldDim);
@@ -141,7 +142,7 @@ public abstract class AbstractGameMode {
 
     abstract public boolean canMove();
 
-    abstract public boolean hasWinner();
+    abstract public int winnerId();
 
     /**
      * Returns list in certain order: no player, player0, player1, etc.

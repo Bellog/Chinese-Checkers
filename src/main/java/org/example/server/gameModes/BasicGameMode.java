@@ -21,6 +21,7 @@ class BasicGameMode extends AbstractGameMode {
     public BasicGameMode(int maxPlayers) {
         super(maxPlayers);
         setPlayerBases();
+        setWinCondition();
 
         for (int y = 0; y < defaultBoard.size(); y++) {
             board.add(new ArrayList<>());
@@ -86,6 +87,18 @@ class BasicGameMode extends AbstractGameMode {
         }});
     }
 
+    protected void setWinCondition() {
+        for (int i = 0; i < maxPlayers; i++) {
+            winCondition.add(new ArrayList<>());
+            for (List<Integer> l : defaultBoard) {
+                for (int n : l) {
+                    if (n == (i+3)%6)
+                        winCondition.get(i).add(new Pair(l.indexOf(n), defaultBoard.indexOf(l)));
+                }
+            }
+        }
+    }
+
     @Override
     protected List<Pair> getNeighbors(Pair pos) {
         List<Pair> list = new ArrayList<>();
@@ -110,7 +123,19 @@ class BasicGameMode extends AbstractGameMode {
 
     @Override
     public int winnerId() {
+        for (int i = 0; i < maxPlayers; i++) {
+            if (isWinner(i))
+                return i;
+        }
         return -1;
+    }
+
+    protected boolean isWinner (int i) {
+        for (Pair p : winCondition.get(i)) {
+            if (board.get(p.second).get(p.first) != i)
+                return false;
+        }
+        return true;
     }
 
     /**
@@ -183,11 +208,6 @@ class BasicGameMode extends AbstractGameMode {
     @Override
     public boolean canMove() {
         return true;
-    }
-
-    @Override
-    public boolean hasWinner() {
-        return false;
     }
 
     @Override
