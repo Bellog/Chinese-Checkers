@@ -145,28 +145,34 @@ public class GameHandler {
             return;
         }
 
-        if (game.move(p0, p1)) {
-            if (game.hasWinner()) {
-                for (int i = 0; i < game.getNumberOfPlayers(); i++)
-                    if (i != currentPlayer)
-                        sendToPlayer(players.get(i), new Packet.PacketBuilder()
-                                .code(Packet.Codes.GAME_END).message("you lost!").build());
-                    else
-                        sendToPlayer(players.get(i), new Packet.PacketBuilder()
-                                .code(Packet.Codes.GAME_END).message("you won!").build());
-            } else
-                for (int i = 0; i < game.getNumberOfPlayers(); i++)
-                    if (i != currentPlayer)
-                        sendToPlayer(players.get(i), new Packet.PacketBuilder()
-                                .code(Packet.Codes.OPPONENT_MOVE).board(boardAsList())
-                                .message("Opponent " + getPlayerId(player) + " moved").build());
-                    else
-                        sendToPlayer(players.get(i), new Packet.PacketBuilder()
-                                .code(Packet.Codes.ACTION_SUCCESS).board(boardAsList()).build());
+        if (game.canMove()) {
+            if (game.move(p0, p1)) {
+                if (game.hasWinner()) {
+                    for (int i = 0; i < game.getNumberOfPlayers(); i++)
+                        if (i != currentPlayer)
+                            sendToPlayer(players.get(i), new Packet.PacketBuilder()
+                                    .code(Packet.Codes.GAME_END).message("you lost!").build());
+                        else
+                            sendToPlayer(players.get(i), new Packet.PacketBuilder()
+                                    .code(Packet.Codes.GAME_END).message("you won!").build());
+                } else
+                    for (int i = 0; i < game.getNumberOfPlayers(); i++)
+                        if (i != currentPlayer)
+                            sendToPlayer(players.get(i), new Packet.PacketBuilder()
+                                    .code(Packet.Codes.OPPONENT_MOVE).board(boardAsList())
+                                    .message("Opponent " + getPlayerId(player) + " moved").build());
+                        else
+                            sendToPlayer(players.get(i), new Packet.PacketBuilder()
+                                    .code(Packet.Codes.ACTION_SUCCESS).board(boardAsList()).build());
+            } else {
+                player.send(new Packet.PacketBuilder()
+                        .code(Packet.Codes.ACTION_FAILURE).message("This field is already set").build());
+                return;
+            }
         } else {
-            player.send(new Packet.PacketBuilder()
-                    .code(Packet.Codes.ACTION_FAILURE).message("This field is already set").build());
-            return;
+            sendToPlayer(players.get(currentPlayer), new Packet.PacketBuilder()
+                    .code(Packet.Codes.CANNOT_MOVE).board(boardAsList())
+                    .message("You cannot move from this field").build());
         }
         //move to next player and notify them
         currentPlayer = (currentPlayer + 1) % game.getNumberOfPlayers();

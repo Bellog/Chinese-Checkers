@@ -82,7 +82,7 @@ public abstract class AbstractGameMode {
      * @param pos position of a pawn to check
      * @return List of field where player can move, null if there is no pawn at specified position
      */
-    public abstract List<Pair> getPossibleMoves(Pair pos);
+    protected abstract List<Pair> getPossibleMoves(Pair pos);
 
     /**
      * Returns game board, where each field is a Pair of (state, type)
@@ -138,6 +138,8 @@ public abstract class AbstractGameMode {
             return;
         Collections.swap(tempMoveList, tempMoveList.size() - 1, 0);
     }
+
+    abstract public boolean canMove();
 
     abstract public boolean hasWinner();
 

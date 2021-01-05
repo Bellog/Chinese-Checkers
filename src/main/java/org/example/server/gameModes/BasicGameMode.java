@@ -101,7 +101,7 @@ class BasicGameMode extends AbstractGameMode {
     }
 
     @Override
-    public List<Pair> getPossibleMoves(Pair pos) {
+    protected List<Pair> getPossibleMoves(Pair pos) {
         // if field state is -1 and is a neighbor then player can move there
         return getNeighbors(pos).stream()
                 .filter(p -> p != null && board.get(p.second).get(p.first) == -1)
@@ -178,6 +178,11 @@ class BasicGameMode extends AbstractGameMode {
             return true;
         }
         return false;
+    }
+
+    @Override
+    public boolean canMove() {
+        return true;
     }
 
     @Override
