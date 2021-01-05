@@ -50,7 +50,8 @@ public class Server {
             System.exit(4);
         }
 
-        gameHandler = new GameHandler(version, this, new StandardGameMode());
+        // here a chosen game mode is given to create a game
+        gameHandler = new GameHandler(version, this, AvailableGameModes.GameModes.STANDARD);
 
         int currentPlayers = 0;
         while (currentPlayers < gameHandler.getGame().getNumberOfPlayers()) {

@@ -28,12 +28,13 @@ public class GameHandler {
      *
      * @param gameVersion version needed to play the game.
      * @param server      given server.
-     * @param game        type of game that will be played.
+     * @param mode        type of game that will be played.
      */
-    public GameHandler(String gameVersion, Server server, StandardGameMode game) {
+    public GameHandler(String gameVersion, Server server, AvailableGameModes.GameModes mode) {
         this.server = server;
         this.gameVersion = gameVersion;
-        this.game = game;
+        AvailableGameModes available = new AvailableGameModes();
+        this.game = available.getGameMode(mode);
         players = new ArrayList<>(Collections.nCopies(game.getNumberOfPlayers(), null));
     }
 
