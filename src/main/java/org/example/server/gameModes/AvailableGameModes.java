@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.TreeMap;
 
 public class AvailableGameModes {
+    // commit change comment
     public enum GameModes {
         // For each new class in gameModes package, add new game mode id here
         BASIC,

@@ -12,6 +12,7 @@ import java.util.List;
  * Interface used to implement various game modes.
  */
 public abstract class AbstractGameMode {
+    // commit change comment
     protected final List<List<Integer>> board;
     protected final int maxPlayers;
     protected final List<List<Integer>> defaultBoard = getDefaultBoard();

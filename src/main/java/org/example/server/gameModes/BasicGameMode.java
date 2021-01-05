@@ -11,6 +11,8 @@ import java.util.stream.Collectors;
 
 public class BasicGameMode extends AbstractGameMode {
 
+    // commit change comment
+
     //TODO make it so that you choose game mode in cli when server starts
     private final List<Color> colorScheme = List.of(Color.RED, Color.GREEN, Color.BLUE, Color.CYAN, Color.MAGENTA, Color.YELLOW);
 
