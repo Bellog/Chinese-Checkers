@@ -12,10 +12,10 @@ import java.util.List;
  * Interface used to implement various game modes.
  */
 public abstract class AbstractGameMode {
-    protected final List<List<Integer>> board = new ArrayList<>();
+    protected final List<List<Integer>> board;
     protected final int maxPlayers;
     protected final List<List<Integer>> defaultBoard = getDefaultBoard();
-    public final Map<Integer, Map<Integer, Integer>> playerBases = new TreeMap();
+    protected final Map<Integer, Map<Integer, Integer>> playerBases;
     public List<Pair> tempMoveList = new ArrayList<>();
 
     /**
@@ -25,7 +25,16 @@ public abstract class AbstractGameMode {
      */
     protected AbstractGameMode(int maxPlayers) {
         this.maxPlayers = maxPlayers;
+        //this.possiblePlayerNumbers = new ArrayList<>();
+        this.board = new ArrayList<>();
+        this.playerBases = new TreeMap<>();
     }
+
+    //protected abstract void setPlayerNumbers();
+
+    protected abstract void setPlayerBases();
+
+    //protected static List<Integer> getPlayerNumbers() {return new ArrayList<>();}
 
     protected abstract List<List<Integer>> getDefaultBoard();
 
@@ -125,7 +134,10 @@ public abstract class AbstractGameMode {
     public void rollBack() {
         if (tempMoveList.isEmpty())
             return;
-        Collections.swap(tempMoveList, tempMoveList.size() - 1, 0);
+        Pair first = tempMoveList.get(0), last = tempMoveList.get(tempMoveList.size() - 1), temp = first;
+        board.get(first.second).set(first.first, board.get(last.second).get(last.first));
+        board.get(last.second).set(last.first, board.get(temp.second).get(temp.first));
+        tempMoveList.clear();
     }
 
     abstract public boolean hasWinner();
