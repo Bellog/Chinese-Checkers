@@ -3,8 +3,7 @@ package org.example.server;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
 import org.example.connection.ConnectionHelper;
-import org.example.server.gameModes.BasicGameMode;
-import org.example.server.gameModes.StandardGameMode;
+import org.example.server.gameModes.AvailableGameModes;
 
 import java.io.FileReader;
 import java.io.IOException;
@@ -51,7 +50,13 @@ public class Server {
         }
 
         // here a chosen game mode is given to create a game
-        gameHandler = new GameHandler(version, this, AvailableGameModes.GameModes.STANDARD);
+        var gameMode = AvailableGameModes.getGameMode(AvailableGameModes.GameModes.STANDARD, 2);
+        if (gameMode == null) {
+            gameHandler = null;
+            return;
+        }
+
+        gameHandler = new GameHandler(version, this, gameMode);
 
         int currentPlayers = 0;
         while (currentPlayers < gameHandler.getGame().getNumberOfPlayers()) {

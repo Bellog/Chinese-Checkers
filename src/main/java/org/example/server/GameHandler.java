@@ -3,8 +3,6 @@ package org.example.server;
 import org.example.Pair;
 import org.example.connection.Packet;
 import org.example.server.gameModes.AbstractGameMode;
-import org.example.server.gameModes.BasicGameMode;
-import org.example.server.gameModes.StandardGameMode;
 
 import java.awt.*;
 import java.util.ArrayList;
@@ -28,13 +26,12 @@ public class GameHandler {
      *
      * @param gameVersion version needed to play the game.
      * @param server      given server.
-     * @param mode        type of game that will be played.
+     * @param game        type of game that will be played.
      */
-    public GameHandler(String gameVersion, Server server, AvailableGameModes.GameModes mode) {
+    public GameHandler(String gameVersion, Server server, AbstractGameMode game) {
         this.server = server;
         this.gameVersion = gameVersion;
-        AvailableGameModes available = new AvailableGameModes();
-        this.game = available.getGameMode(mode);
+        this.game = game;
         players = new ArrayList<>(Collections.nCopies(game.getNumberOfPlayers(), null));
     }
 

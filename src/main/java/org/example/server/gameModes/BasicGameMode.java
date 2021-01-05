@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
-public class BasicGameMode extends AbstractGameMode {
+class BasicGameMode extends AbstractGameMode {
 
     //TODO make it so that you choose game mode in cli when server starts
     private final List<Color> colorScheme = List.of(Color.RED, Color.GREEN, Color.BLUE, Color.CYAN, Color.MAGENTA, Color.YELLOW);
@@ -21,13 +21,10 @@ public class BasicGameMode extends AbstractGameMode {
     public BasicGameMode(int maxPlayers) {
         super(maxPlayers);
         setPlayerBases();
-        // maxPlayers can be only 2,3,4 or 6
-        if (maxPlayers != 2 && maxPlayers != 3 && maxPlayers != 4 && maxPlayers != 6)
-            return;
 
-        for (int y = 0; y < 17; y++) {
+        for (int y = 0; y < defaultBoard.size(); y++) {
             board.add(new ArrayList<>());
-            for (int x = 0; x < 25; x++) {
+            for (int x = 0; x < defaultBoard.get(0).size(); x++) {
                 if (defaultBoard.get(y).get(x) != null && defaultBoard.get(y).get(x) > -2) {
                     if (defaultBoard.get(y).get(x) == -1)
                         board.get(y).add(-1);
@@ -60,17 +57,27 @@ public class BasicGameMode extends AbstractGameMode {
 
      */
 
-    private void setPlayerBases () {
-        playerBases.put(2, new TreeMap<>()
-        {{
-            put(0, 0); put(1, -1); put(2, -1); put(3, 1); put(4, -1); put(5, -1);
+    /**
+     * Determines which starting fields belong to which player, according to number of players
+     */
+    protected void setPlayerBases() {
+        playerBases.put(2, new TreeMap<>() {{
+            put(0, 0);
+            put(1, -1);
+            put(2, -1);
+            put(3, 1);
+            put(4, -1);
+            put(5, -1);
         }});
-        playerBases.put(3, new TreeMap<>()
-        {{
-            put(0, 0); put(1, 1); put(2, -1); put(3, -1); put(4, -1); put(5, 2);
+        playerBases.put(3, new TreeMap<>() {{
+            put(0, 0);
+            put(1, 1);
+            put(2, -1);
+            put(3, -1);
+            put(4, -1);
+            put(5, 2);
         }});
-        playerBases.put(4, new TreeMap<>()
-        {{
+        playerBases.put(4, new TreeMap<>() {{
             put(0, -1); put(1, 0); put(2, 1); put(3, -1); put(4, 2); put(5, 3);
         }});
         playerBases.put(6, new TreeMap<>()

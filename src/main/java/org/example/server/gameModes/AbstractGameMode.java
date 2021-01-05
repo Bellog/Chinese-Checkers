@@ -12,10 +12,10 @@ import java.util.*;
  * Interface used to implement various game modes.
  */
 public abstract class AbstractGameMode {
-    public final Map<Integer, Map<Integer, Integer>> playerBases = new TreeMap();
-    protected final List<List<Integer>> board = new ArrayList<>();
+    protected final List<List<Integer>> board;
     protected final int maxPlayers;
     protected final List<List<Integer>> defaultBoard = getDefaultBoard();
+    protected final Map<Integer, Map<Integer, Integer>> playerBases;
     public List<Pair> tempMoveList = new ArrayList<>();
 
     /**
@@ -25,7 +25,16 @@ public abstract class AbstractGameMode {
      */
     protected AbstractGameMode(int maxPlayers) {
         this.maxPlayers = maxPlayers;
+        //this.possiblePlayerNumbers = new ArrayList<>();
+        this.board = new ArrayList<>();
+        this.playerBases = new TreeMap<>();
     }
+
+    //protected abstract void setPlayerNumbers();
+
+    protected abstract void setPlayerBases();
+
+    //protected static List<Integer> getPlayerNumbers() {return new ArrayList<>();}
 
     protected abstract List<List<Integer>> getDefaultBoard();
 
