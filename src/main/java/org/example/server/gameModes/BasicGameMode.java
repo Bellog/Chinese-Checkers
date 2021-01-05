@@ -5,6 +5,7 @@ import org.example.Pair;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 public class BasicGameMode extends AbstractGameMode {
@@ -19,6 +20,7 @@ public class BasicGameMode extends AbstractGameMode {
 
     public BasicGameMode(int maxPlayers) {
         super(maxPlayers);
+        setPlayerBases();
         // maxPlayers can be only 2,3,4 or 6
         if (maxPlayers != 2 && maxPlayers != 3 && maxPlayers != 4 && maxPlayers != 6)
             return;
@@ -27,16 +29,16 @@ public class BasicGameMode extends AbstractGameMode {
             board.add(new ArrayList<>());
             for (int x = 0; x < 25; x++) {
                 if (defaultBoard.get(y).get(x) != null && defaultBoard.get(y).get(x) > -2) {
-                    if (isCorrectBase(new Pair(x, y)))
-                        board.get(y).add(defaultBoard.get(y).get(x));
-                    else
+                    if (defaultBoard.get(y).get(x) == -1)
                         board.get(y).add(-1);
+                    else board.get(y).add(playerBases.get(maxPlayers).get(defaultBoard.get(y).get(x)));
                 } else
                     board.get(y).add(null);
             }
         }
     }
 
+    /*
     /**
      * Helper method that determines whether particular field from baseBoard is a base
      * according to number of players
@@ -45,6 +47,7 @@ public class BasicGameMode extends AbstractGameMode {
      * @param pos position to check
      * @return whether field is a base according to number of players
      */
+    /*
     private boolean isCorrectBase(Pair pos) {
         return switch (maxPlayers) {
             case 2 -> List.of(0, 3).contains(defaultBoard.get(pos.second).get(pos.first));
@@ -53,6 +56,27 @@ public class BasicGameMode extends AbstractGameMode {
             case 6 -> true;
             default -> false;
         };
+    }
+
+     */
+
+    private void setPlayerBases () {
+        playerBases.put(2, new TreeMap<>()
+        {{
+            put(0, 0); put(1, -1); put(2, -1); put(3, 1); put(4, -1); put(5, -1);
+        }});
+        playerBases.put(3, new TreeMap<>()
+        {{
+            put(0, 0); put(1, 1); put(2, -1); put(3, -1); put(4, -1); put(5, 2);
+        }});
+        playerBases.put(4, new TreeMap<>()
+        {{
+            put(0, -1); put(1, 0); put(2, 1); put(3, -1); put(4, 2); put(5, 3);
+        }});
+        playerBases.put(6, new TreeMap<>()
+        {{
+            put(0, 0); put(1, 1); put(2, 2); put(3, 3); put(4, 4); put(5, 5);
+        }});
     }
 
     @Override
@@ -139,11 +163,11 @@ public class BasicGameMode extends AbstractGameMode {
     }
 
     @Override
-    public boolean move(int x0, int y0, int x1, int y1) {
-        int state = getBoard().get(y1).get(x1);
+    public boolean move(Pair p0, Pair p1) {
+        int state = getBoard().get(p1.second).get(p1.first);
         if (state == -1) {
-            board.get(y1).set(x1, board.get(y0).get(x0));
-            board.get(y0).set(x0, state);
+            board.get(p1.second).set(p1.first, board.get(p0.second).get(p0.first));
+            board.get(p0.second).set(p0.first, state);
             return true;
         }
         return false;

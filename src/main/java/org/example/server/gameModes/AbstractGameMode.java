@@ -5,16 +5,18 @@ import org.example.Pair;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.*;
 
 /**
  * Interface used to implement various game modes.
  */
 public abstract class AbstractGameMode {
+    public final Map<Integer, Map<Integer, Integer>> playerBases = new TreeMap();
     protected final List<List<Integer>> board = new ArrayList<>();
     protected final int maxPlayers;
     protected final List<List<Integer>> defaultBoard = getDefaultBoard();
+    public List<Pair> tempMoveList = new ArrayList<>();
 
     /**
      * Every concrete child should implement logic based on maxPlayers
@@ -116,7 +118,17 @@ public abstract class AbstractGameMode {
      *
      * @return true if move is successful, false if not
      */
-    abstract public boolean move(int x0, int y0, int x1, int y1);
+    abstract public boolean move(Pair p0, Pair p1);
+
+    public void endTurn() {
+        tempMoveList.clear();
+    }
+
+    public void rollBack() {
+        if (tempMoveList.isEmpty())
+            return;
+        Collections.swap(tempMoveList, tempMoveList.size() - 1, 0);
+    }
 
     abstract public boolean hasWinner();
 
