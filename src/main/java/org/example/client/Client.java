@@ -18,14 +18,6 @@ public class Client implements IClient {
 
     public Client() {
         conn = new ClientConnection(this);
-
-        while (!conn.isInitialized()) {
-            try {
-                Thread.sleep(100); //ignore this warning for now
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
     }
 
     public static void main(String[] args) {
@@ -33,11 +25,26 @@ public class Client implements IClient {
         new Client();
     }
 
-    @Override
     public void startGame(List<Color> colorScheme, int playerId, List<List<Integer>> board, ImageIcon boardBackground, List<List<String>> playerInfo) {
+        if (frame != null || gamePanel != null || sidePanel != null)
+            return; //if either of these is not null, then start game was already called
+
         frame = new AppFrame();
-        gamePanel = new GamePanel(playerId, colorScheme, board, this, boardBackground);
-        sidePanel = new SidePanel(playerInfo, this, colorScheme, gamePanel.getPreferredSize().height);
+        gamePanel = new GamePanel(playerId, colorScheme, board, boardBackground) {
+            @Override
+            public void send(Packet packet) {
+                if (conn != null)
+                    conn.send(packet);
+            }
+        };
+        sidePanel = new SidePanel(playerInfo, colorScheme, gamePanel.getPreferredSize().height) {
+
+            @Override
+            public void send(Packet packet) {
+                if (conn != null)
+                    conn.send(packet);
+            }
+        };
 
         frame.getContentPane().add(gamePanel);
         Component c = Box.createHorizontalStrut(5);
@@ -51,15 +58,35 @@ public class Client implements IClient {
         frame.setVisible(true);
     }
 
-    @Override
-    public void update(List<List<Integer>> board) {
+    private void setPanelStatus(boolean status) {
         if (gamePanel != null)
-            gamePanel.update(board);
+            gamePanel.setStatus(status);
+        if (sidePanel != null)
+            sidePanel.setStatus(status);
     }
 
     @Override
-    public void send(Packet packet) {
-        if (conn.isInitialized())
-            conn.send(packet);
+    public synchronized void receive(Packet packet) {
+        switch (packet.getCode()) {
+            case GAME_START -> startGame(packet.getColorScheme(), packet.getPlayerId(),
+                    packet.getBoard(), packet.getImage(), packet.getPlayerInfo());
+            case TURN_START, GAME_RESUME -> setPanelStatus(true);
+            case TURN_END, GAME_PAUSE, CONNECTION_LOST -> setPanelStatus(false);
+            case BOARD_UPDATE -> {
+                if (gamePanel != null)
+                    gamePanel.update(packet.getBoard());
+            }
+            case PLAYER_UPDATE -> {
+                if (sidePanel != null)
+                    sidePanel.updatePlayerInfo(packet.getPlayerInfo());
+            }
+        }
+
+        if (packet.getMessage() != null) {
+            if (sidePanel != null)
+                sidePanel.updateLogs(packet.getMessage());
+            else
+                System.out.println(packet.getMessage());
+        }
     }
 }

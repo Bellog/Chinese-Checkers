@@ -8,7 +8,8 @@ import java.io.Serializable;
 import java.util.List;
 
 /**
- * Packet class used to send data between server and clients, each code from Codes enum determines which fields are set
+ * Packet class used to send data between server and clients, each code from Codes enum determines which fields are set.
+ * When writing method that handles packets be wary of special codes, see {@link Packet.Codes} for more information.
  */
 public class Packet implements Serializable {
 
@@ -80,6 +81,7 @@ public class Packet implements Serializable {
      */
     public enum Codes implements Serializable {
         INFO,
+        PLAYER_UPDATE,
         BOARD_UPDATE,
         TURN_START,
         TURN_MOVE,
@@ -93,7 +95,16 @@ public class Packet implements Serializable {
         GAME_START,     //board, playerId, colorScheme
         GAME_END,
         GAME_PAUSE,
-        GAME_RESUME;
+        GAME_RESUME,
+        /**
+         * Special packet, used internally to notify that caller has lost connection, i.e.
+         * IServeConnection can send this packet to IServer using provided method
+         * <p></p> Requires fields:
+         * <ul>
+         *     <li>message - connection loss information</li>
+         * </ul>
+         */
+        CONNECTION_LOST;
         //Add more actions as needed, then change version inside pom.xml to ensure integrity between client and server
 
         /**

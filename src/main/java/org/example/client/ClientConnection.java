@@ -12,6 +12,7 @@ import java.io.ObjectOutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Responsible for communication with the server.
@@ -21,32 +22,30 @@ public class ClientConnection implements IClientConnection {
     private final AtomicReference<ObjectInputStream> input = new AtomicReference<>();
     private final AtomicReference<ObjectOutputStream> output = new AtomicReference<>();
     private final Socket socket;
-    private final Client client;
+    private final IClient client;
     private volatile boolean isInitialized = false;
+    private final ReentrantLock LOCK = new ReentrantLock();
 
     /**
      * Class constructor.
      *
      * @param client connected user.
      */
-    public ClientConnection(Client client) {
+    public ClientConnection(IClient client) {
         this.client = client;
         socket = new Socket();
         new Thread(() -> {
             try {
                 init();
             } catch (Exception e) {
-                e.printStackTrace();
-                System.out.println("Lost connection with the server closing program");
-                System.exit(0);
+                client.receive(new Packet.PacketBuilder().code(Packet.Codes.CONNECTION_LOST)
+                        .message(e.getMessage()).build());
             }
         }).start();
     }
 
     /**
      * Initialises a connection between user and the server.
-     *
-     * @throws Exception
      */
     private void init() throws Exception {
         MavenXpp3Reader reader = new MavenXpp3Reader();
@@ -56,8 +55,7 @@ public class ClientConnection implements IClientConnection {
         try {
             socket.connect(new InetSocketAddress("localhost", ConnectionHelper.DEFAULT_PORT), 10000);
         } catch (IOException e) {
-            System.out.println("Couldn't connect to any server");
-            return;
+            throw new Exception("Couldn't connect to any server");
         }
 
         try {
@@ -67,71 +65,54 @@ public class ClientConnection implements IClientConnection {
             input.set(new ObjectInputStream(this.socket.getInputStream()));
             ConnectionHelper c = (ConnectionHelper) input.get().readUnshared();
             if (c.message != ConnectionHelper.Message.STREAM_START) {
-                System.out.println("Protocol error");
-                throw new Exception();
+                throw new Exception("Protocol error");
             }
             c = (ConnectionHelper) input.get().readUnshared();
             if (c.message == ConnectionHelper.Message.VERSION_MISMATCH) {
-                System.out.print("Version mismatch: your version: " + version + ", server version: " + c.version);
                 input.get().close();
                 output.get().close();
                 socket.close();
-                throw new Exception();
+                throw new Exception("Version mismatch: your version: " + version + ", server version: " + c.version);
             }
         } catch (IOException | ClassNotFoundException | ClassCastException e) {
             throw new Exception();
         }
-        System.out.println("Found a game!");
-        new Thread(this::handleServerInput).start();
-        new Thread(() -> {
-            try {
-                output.get().reset();
-                output.get().writeUnshared(new Packet.PacketBuilder().code(Packet.Codes.INFO)
-                        .message("remove this lol, it's here so this part of code is not useless").build());
 
-                isInitialized = true;
-            } catch (IOException ioException) {
-                System.out.println("connection error, closing program");
-                System.exit(20);
-            }
-        }).start();
+        client.receive(new Packet.PacketBuilder().code(Packet.Codes.INFO)
+                .message("Found a game!").build());
+        new Thread(this::handleServerInput).start();
+        // TODO send fieldDim to server
+        isInitialized = true;
     }
 
     @Override
-    public synchronized void send(Packet packet) {
-        try {
-            output.get().reset();
-            output.get().writeUnshared(packet);
-        } catch (IOException e) {
-            System.out.println("connection error, closing program");
-            System.exit(40);
-        }
+    public void send(Packet packet) {
+        new Thread(() -> {
+            try {
+                LOCK.lock();
+                output.get().reset();
+                output.get().writeUnshared(packet);
+                output.get().flush();
+                LOCK.unlock();
+            } catch (IOException e) {
+                LOCK.unlock();
+                client.receive(new Packet.PacketBuilder().code(Packet.Codes.CONNECTION_LOST)
+                        .message("Connection lost on send").build());
+            }
+        }).start();
     }
 
     private void handleServerInput() {
         while (socket.isConnected()) {
             try {
-                Packet packet = (Packet) input.get().readUnshared();
-                switch (packet.getCode()) {
-                    case INFO, WRONG_ACTION, ACTION_FAILURE -> System.out.println(packet.getMessage());
-                    case OPPONENT_TURN -> System.out.println("It's not your turn");
-                    case TURN_START -> System.out.println("It's your turn now!");
-                    case ACTION_SUCCESS, BOARD_UPDATE -> client.update(packet.getBoard());
-                    case GAME_START -> client.startGame(packet.getColorScheme(),
-                            packet.getPlayerId(), packet.getBoard(), packet.getImage(), packet.getPlayerInfo());
-                    case GAME_END -> {
-                        System.out.println(packet.getMessage());
-                        socket.close();
-                    }
-                    case OPPONENT_MOVE -> {
-                        System.out.println(packet.getMessage());
-                        client.update(packet.getBoard());
-                    }
-                }
+                Packet packet = (Packet) input.get().readObject();
+                if (packet != null)
+                    client.receive(packet);
             } catch (IOException | ClassNotFoundException | ClassCastException e) {
                 e.printStackTrace();
-                System.out.println("connection error, closing program");
-                System.exit(30);
+                client.receive(new Packet.PacketBuilder().code(Packet.Codes.CONNECTION_LOST)
+                        .message("Connection lost on receive").build());
+                return;
             }
         }
     }

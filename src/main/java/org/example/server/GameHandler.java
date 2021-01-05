@@ -6,99 +6,44 @@ import org.example.server.gameModes.AbstractGameMode;
 
 import java.awt.*;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
+import java.util.Random;
 import java.util.concurrent.locks.ReentrantLock;
 
-//TODO move handler (this) to server class, requires proper implementation of handler, field and game classes first
-public class GameHandler {
+public abstract class GameHandler {
 
-    private final List<Player> players;
     private final AbstractGameMode game;
-    private final String gameVersion;
-    private final Server server;
     private final ReentrantLock LOCK = new ReentrantLock();
     private int currentPlayer;
 
     /**
      * Class constructor.
      *
-     * @param gameVersion version needed to play the game.
-     * @param server      given server.
-     * @param game        type of game that will be played.
+     * @param game type of game that will be played.
      */
-    public GameHandler(String gameVersion, Server server, AbstractGameMode game) {
-        this.server = server;
-        this.gameVersion = gameVersion;
+    public GameHandler(AbstractGameMode game) {
         this.game = game;
-        players = new ArrayList<>(Collections.nCopies(game.getNumberOfPlayers(), null));
+
+        var rand = new Random();
+        currentPlayer = rand.nextInt(game.getNumberOfPlayers());
     }
 
-    public void removePlayer(Player player) {
-        LOCK.lock();
-        int id = getPlayerId(player);
-        players.set(players.indexOf(player), null);
-        players.stream().filter(Objects::nonNull)
-                .forEach(p -> sendToPlayer(p, new Packet.PacketBuilder()
-                        .code(Packet.Codes.INFO).message("Lost connection to player " + id).build()));
-        LOCK.unlock();
-
-        new Thread(() -> {
-            if (!server.getNewPlayer()) {   // blocking call
-                LOCK.lock();
-                players.stream().filter(Objects::nonNull)
-                        .forEach(p -> sendToPlayer(p, new Packet.PacketBuilder()
-                                .code(Packet.Codes.GAME_END).message("Could not find any players").build()));
-                LOCK.unlock();
-            }
-        }).start();
-    }
-
-    public String getGameVersion() {
-        return gameVersion;
-    }
-
-    public synchronized void addPlayer(Player player) {
-        LOCK.lock();
-        if (players.size() == 0) currentPlayer = 0;
-        for (int i = 0; i < players.size(); i++) {
-            if (players.get(i) == null) {
-                players.set(i, player);
-                LOCK.unlock();
-                return;
-            }
-        }
-        players.add(player);
-        LOCK.unlock();
-    }
-
-    /**
-     * Returns player's id
-     *
-     * @param player returns this players id
-     * @return -1 if this player does not have any id
-     */
-    public synchronized int getPlayerId(Player player) {
-        if (!players.contains(player)) return -1;
-
-        return players.indexOf(player);
-    }
-
-    public List<List<Integer>> boardAsList() {
-        return game.getBoard();
+    public int getNumberOfPlayers() {
+        return game.getNumberOfPlayers();
     }
 
     public void gameStart() {
-        for (int i = 0; i < players.size(); i++) {
+        for (int i = 0; i < game.getNumberOfPlayers(); i++) {
             //TODO get dimension from player
-            players.get(i).send(new Packet.PacketBuilder()
+            sendToPlayer(i, new Packet.PacketBuilder()
                     .code(Packet.Codes.GAME_START).colorScheme(game.getColorScheme())
-                    .board(game.getBoard()).playerId(i)
+                    .board(game.getBoard())
+                    .playerId(i)
                     .image(game.getBoardBackground(new Dimension(28, 48)))
                     .playerInfo(generatePlayerInfo(i))
                     .build());
         }
+        startTurn();
     }
 
     private List<List<String>> generatePlayerInfo(int playerId) {
@@ -123,62 +68,65 @@ public class GameHandler {
         return list;
     }
 
-
-    public void handleInput(Player player, Packet packet) {
+    public void handleInput(int player, Packet packet) {
         LOCK.lock();
+        if (player != currentPlayer) {
+            sendToPlayer(player, new Packet.PacketBuilder().code(Packet.Codes.OPPONENT_TURN)
+                    .message("It's not your turn!").build());
+            return;
+        }
+
         switch (packet.getCode()) {
-            case BOARD_UPDATE -> sendToPlayer(player, new Packet.PacketBuilder()
-                    .code(Packet.Codes.BOARD_UPDATE).board(boardAsList()).build());
-            case TURN_MOVE -> move(player, packet.getStartPos(), packet.getEndPos());
+            case TURN_MOVE -> {
+                if (move(packet.getStartPos(), packet.getEndPos()))
+                    for (int i = 0; i < game.getNumberOfPlayers(); i++)
+                        sendToPlayer(i, new Packet.PacketBuilder().code(Packet.Codes.BOARD_UPDATE)
+                                .board(game.getBoard()).build());
+            }
+            case TURN_END -> endTurn();
+            case TURN_ROLLBACK -> game.rollBack();
         }
         LOCK.unlock();
     }
 
-    private void move(Player player, Pair p0, Pair p1) {
-        if (players.indexOf(player) != currentPlayer) {
-            sendToPlayer(player, new Packet.PacketBuilder().code(Packet.Codes.OPPONENT_TURN).build());
-            return;
+    private void startTurn() {
+        sendToPlayer(currentPlayer, new Packet.PacketBuilder().code(Packet.Codes.TURN_START)
+                .message("It's your turn now!").build());
+        for (int i = 0; i < game.getNumberOfPlayers(); i++) {
+            if (i != currentPlayer)
+                sendToPlayer(i, new Packet.PacketBuilder().code(Packet.Codes.INFO)
+                        .message("Player " + (currentPlayer + 1) + " turn").build());
         }
-        if (game.getFieldInfo(p0.first, p0.second) != players.indexOf(player)) {
-            sendToPlayer(player, new Packet.PacketBuilder().code(Packet.Codes.ACTION_FAILURE)
-                    .message("This is not your pawn").build());
-            return;
-        }
+    }
 
-        if (game.move(p0, p1)) {
-            if (game.hasWinner()) {
-                for (int i = 0; i < game.getNumberOfPlayers(); i++)
-                    if (i != currentPlayer)
-                        sendToPlayer(players.get(i), new Packet.PacketBuilder()
-                                .code(Packet.Codes.GAME_END).message("you lost!").build());
-                    else
-                        sendToPlayer(players.get(i), new Packet.PacketBuilder()
-                                .code(Packet.Codes.GAME_END).message("you won!").build());
-            } else
-                for (int i = 0; i < game.getNumberOfPlayers(); i++)
-                    if (i != currentPlayer)
-                        sendToPlayer(players.get(i), new Packet.PacketBuilder()
-                                .code(Packet.Codes.OPPONENT_MOVE).board(boardAsList())
-                                .message("Opponent " + getPlayerId(player) + " moved").build());
-                    else
-                        sendToPlayer(players.get(i), new Packet.PacketBuilder()
-                                .code(Packet.Codes.ACTION_SUCCESS).board(boardAsList()).build());
-        } else {
-            player.send(new Packet.PacketBuilder()
-                    .code(Packet.Codes.ACTION_FAILURE).message("This field is already set").build());
-            return;
-        }
-        //move to next player and notify them
+    private void endTurn() {
+        sendToPlayer(currentPlayer, new Packet.PacketBuilder().code(Packet.Codes.TURN_END).build());
         currentPlayer = (currentPlayer + 1) % game.getNumberOfPlayers();
-        sendToPlayer(players.get(currentPlayer), new Packet.PacketBuilder().code(Packet.Codes.TURN_START).build());
+        game.endTurn();
+        startTurn();
     }
 
-    private void sendToPlayer(Player player, Packet packet) {
-        if (player == null) return;
-        new Thread(() -> player.send(packet)).start();
+    public boolean move(Pair start, Pair end) {
+        if (game.getFieldInfo(start.first, start.second) != currentPlayer) {
+            sendToPlayer(currentPlayer, new Packet.PacketBuilder().code(Packet.Codes.ACTION_FAILURE)
+                    .message("You cannot move somebody else's pawn!").build());
+            return false;
+        }
+
+        if (game.move(start, end)) {
+            for (int i = 0; i < game.getNumberOfPlayers(); i++)
+                if (i != currentPlayer)
+                    sendToPlayer(i, new Packet.PacketBuilder()
+                            .code(Packet.Codes.OPPONENT_MOVE).board(game.getBoard())
+                            .message("Player " + (currentPlayer + 1) + " moved").build());
+            return true;
+        } else {
+            sendToPlayer(currentPlayer, new Packet.PacketBuilder()
+                    .code(Packet.Codes.ACTION_FAILURE).message("This field is already set").build());
+            return false;
+        }
+
     }
 
-    public AbstractGameMode getGame() {
-        return game;
-    }
+    protected abstract void sendToPlayer(int player, Packet packet);
 }

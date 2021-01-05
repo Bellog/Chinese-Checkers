@@ -61,13 +61,15 @@ public abstract class MouseHandler extends MouseAdapter {
     public void mousePressed(MouseEvent e) {
         start = getPosition(e.getPoint());
         if (start == null || !startCheck(start))
-            return; //player did not press on any field, or pressed on a field that they do not have a pawn on
+            return;
         setFieldSelection(start, true);
 
     }
 
     @Override
     public void mouseReleased(MouseEvent e) {
+        if (start == null)
+            return;
         setFieldSelection(start, false);
         Pair end = getPosition(e.getPoint());
         if (end == null || start.equals(end))
@@ -109,7 +111,7 @@ public abstract class MouseHandler extends MouseAdapter {
      * This method is abstract so that this class does not depend on implementation of the
      * Internet protocol
      *
-     * @param packet
+     * @param packet packet to send
      */
     public abstract void send(Packet packet);
 }

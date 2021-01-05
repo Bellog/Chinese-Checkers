@@ -8,8 +8,9 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
-public class GamePanel extends JPanel {
+public abstract class GamePanel extends JPanel {
 
     private final static Dimension fieldDim = new Dimension(28, 48);
     private final int diameter = Math.min(fieldDim.width, fieldDim.height);
@@ -17,12 +18,35 @@ public class GamePanel extends JPanel {
     private final int playerId;
     private final List<Color> colorScheme;
     private final ImageIcon boardBackground;
-    private final IClient client;
+    // all fields are offset by a single field in x axis, see cropImage method
+    private final MouseHandler handler = new MouseHandler(fieldDim, diameter, new Pair(fieldDim.width, 0)) {
+        @Override
+        protected void setFieldSelection(Pair pos, boolean selected) {
+            board.get(pos.second).get(pos.first).setSelected(selected);
+        }
 
-    GamePanel(int playerId, List<Color> colorScheme, List<List<Integer>> board, IClient client, ImageIcon boardBackground) {
+        @Override
+        protected boolean startCheck(Pair pos) {
+            if (board.get(pos.second).get(pos.first) != null)
+                return board.get(pos.second).get(pos.first).getState() == playerId;
+            else
+                return false;
+        }
+
+        @Override
+        protected boolean endCheck(Pair pos) {
+            return board.get(pos.second).get(pos.first) != null;
+        }
+
+        @Override
+        public void send(Packet packet) {
+            GamePanel.this.send(packet);
+        }
+    };
+
+    GamePanel(int playerId, List<Color> colorScheme, List<List<Integer>> board, ImageIcon boardBackground) {
         this.playerId = playerId;
         this.colorScheme = colorScheme;
-        this.client = client;
         this.boardBackground = cropImage(boardBackground);
 
         for (int y = 0; y < board.size(); y++) {
@@ -35,7 +59,6 @@ public class GamePanel extends JPanel {
             }
         }
 
-        initMouseListener();
         setVisible(true);
     }
 
@@ -55,29 +78,16 @@ public class GamePanel extends JPanel {
                 imageIcon.getIconHeight() - 2 * fieldDim.height));
     }
 
-    private void initMouseListener() {
-        // all fields are offset by a single field in x axis, see cropImage method
-        addMouseListener(new MouseHandler(fieldDim, diameter, new Pair(fieldDim.width, 0)) {
-            @Override
-            protected void setFieldSelection(Pair pos, boolean selected) {
-                board.get(pos.second).get(pos.first).setSelected(selected);
-            }
-
-            @Override
-            protected boolean startCheck(Pair pos) {
-                return board.get(pos.second).get(pos.first).getState() == playerId;
-            }
-
-            @Override
-            protected boolean endCheck(Pair pos) {
-                return board.get(pos.second).get(pos.first) != null;
-            }
-
-            @Override
-            public void send(Packet packet) {
-                client.send(packet);
-            }
-        });
+    public void setStatus(boolean active) {
+        // reset selection of all fields
+        board.forEach(row -> row.stream().filter(Objects::nonNull).forEach(f -> f.setSelected(false)));
+        if (active) {
+            // make sure that there is no handler is not there (i.e when this method is called twice with active = true
+            removeMouseListener(handler);
+            addMouseListener(handler);
+        } else {
+            removeMouseListener(handler);
+        }
     }
 
     @Override
@@ -94,6 +104,8 @@ public class GamePanel extends JPanel {
             }
         }
     }
+
+    public abstract void send(Packet packet);
 
     @Override
     protected void paintComponent(Graphics g) {

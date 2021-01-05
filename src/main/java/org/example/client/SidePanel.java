@@ -10,17 +10,14 @@ import java.util.List;
 /**
  * JPanel showing information about players,
  */
-public class SidePanel extends JPanel {
+public abstract class SidePanel extends JPanel {
     private final JButton endTurnButton;
+    private final JButton resetTurnButton;
     private final Font font = new Font("Tahoma", Font.PLAIN, 12);
     /**
      * Shows in-game logs
      */
     private final JTextArea gameLogs;
-    /**
-     * Used to send packets
-     */
-    private final IClient client;
     /**
      * Player color list used to show association between player number and their pawns' color
      */
@@ -35,13 +32,11 @@ public class SidePanel extends JPanel {
      * Creates side panel based on provided parameters
      *
      * @param info        player information table
-     * @param client      used to send information to the server
      * @param colorScheme list of player colors.
      * @param maxHeight   maximum height of this component <br>
      *                    JTextArea occupies as much height as it can, with this parameter its height can be controlled.
      */
-    SidePanel(List<List<String>> info, IClient client, List<Color> colorScheme, int maxHeight) {
-        this.client = client;
+    SidePanel(List<List<String>> info, List<Color> colorScheme, int maxHeight) {
         this.colorScheme = colorScheme;
 
         playerTable = getPlayerTable(info);
@@ -56,7 +51,8 @@ public class SidePanel extends JPanel {
         add(Box.createVerticalStrut(20));
 
         endTurnButton = getEndTurnButton();
-        add(endTurnButton);
+        resetTurnButton = getResetTurnButton();
+        add(createButtonPanel());
         add(Box.createVerticalStrut(20));
 
         JScrollPane scrollPane = new JScrollPane();
@@ -77,8 +73,11 @@ public class SidePanel extends JPanel {
         gameLogs.insert("> " + text + "\n", 0);
     }
 
-    public void starTurn() {
-        endTurnButton.setEnabled(true);
+    public abstract void send(Packet packet);
+
+    public void setStatus(boolean status) {
+        endTurnButton.setEnabled(status);
+        resetTurnButton.setEnabled(status);
     }
 
     /**
@@ -93,6 +92,20 @@ public class SidePanel extends JPanel {
         add(playerTable, 1);
     }
 
+    private JPanel createButtonPanel() {
+        var panel = new JPanel();
+        panel.setLayout(new GridBagLayout());
+        var con = new GridBagConstraints();
+        con.anchor = GridBagConstraints.CENTER;
+        con.fill = GridBagConstraints.NONE;
+        con.gridx = 0;
+        panel.add(endTurnButton, con);
+        con.gridx = 1;
+        panel.add(resetTurnButton, con);
+        panel.setMaximumSize(panel.getPreferredSize());
+        return panel;
+    }
+
     private JTextArea getGameLogs() {
         JTextArea gameLogs = new JTextArea();
         gameLogs.setText("GAME LOGS\n");
@@ -104,16 +117,24 @@ public class SidePanel extends JPanel {
         return gameLogs;
     }
 
+    private JButton getResetTurnButton() {
+        final JButton resetTurnButton;
+        resetTurnButton = new JButton("reset turn");
+        resetTurnButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        resetTurnButton.setFont(font);
+        resetTurnButton.setEnabled(false);
+        resetTurnButton.addActionListener(v -> send(new Packet.PacketBuilder().code(Packet.Codes.TURN_ROLLBACK).build()));
+        resetTurnButton.setMaximumSize(resetTurnButton.getPreferredSize());
+        return resetTurnButton;
+    }
+
     private JButton getEndTurnButton() {
         final JButton endTurnButton;
         endTurnButton = new JButton("end turn");
         endTurnButton.setAlignmentX(Component.CENTER_ALIGNMENT);
         endTurnButton.setFont(font);
         endTurnButton.setEnabled(false);
-        endTurnButton.addActionListener(v -> {
-            this.client.send(new Packet.PacketBuilder().code(Packet.Codes.TURN_END).build());
-            endTurnButton.setEnabled(false);
-        });
+        endTurnButton.addActionListener(v -> send(new Packet.PacketBuilder().code(Packet.Codes.TURN_END).build()));
         endTurnButton.setMaximumSize(endTurnButton.getPreferredSize());
         return endTurnButton;
     }
@@ -128,10 +149,8 @@ public class SidePanel extends JPanel {
         var con = new GridBagConstraints();
         con.anchor = GridBagConstraints.CENTER;
         con.fill = GridBagConstraints.NONE;
-        con.gridy = 0;
         con.gridx = 0;
         panel.add(playerColumn, con);
-        con.gridx = 1;
         con.gridy = 0;
         panel.add(posColumn, con);
 
