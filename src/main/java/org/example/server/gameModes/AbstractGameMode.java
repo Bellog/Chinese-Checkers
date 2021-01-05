@@ -15,8 +15,8 @@ public abstract class AbstractGameMode {
     protected final List<List<Integer>> board;
     protected final int maxPlayers;
     protected final List<List<Integer>> defaultBoard = getDefaultBoard();
-    protected final Map<Integer, Map<Integer, Integer>> playerBases;
-    protected final List<List<Pair>> winCondition;
+    protected final Map<Integer, Map<Integer, Integer>> playerBases = getPlayerBases();
+    protected final List<List<Pair>> winCondition = getWinCondition();
     public List<Pair> tempMoveList = new ArrayList<>();
 
     /**
@@ -28,15 +28,13 @@ public abstract class AbstractGameMode {
         this.maxPlayers = maxPlayers;
         //this.possiblePlayerNumbers = new ArrayList<>();
         this.board = new ArrayList<>();
-        this.playerBases = new TreeMap<>();
-        this.winCondition = new ArrayList<>();
     }
 
     //protected abstract void setPlayerNumbers();
 
-    protected abstract void setPlayerBases();
+    protected abstract Map<Integer, Map<Integer, Integer>> getPlayerBases();
 
-    protected abstract void setWinCondition();
+    protected abstract List<List<Pair>> getWinCondition();
 
     protected abstract List<List<Integer>> getDefaultBoard();
 
