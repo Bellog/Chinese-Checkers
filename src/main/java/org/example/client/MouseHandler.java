@@ -27,7 +27,7 @@ public abstract class MouseHandler extends MouseAdapter {
     private Pair start;
 
     /**
-     * Instantiates this class with specified field dimension and field diameter
+     * Instantiates this class with specified field dimension, diameter and no offset
      *
      * @param fieldDim dimension of a single field
      * @param diameter diameter of a clickable circle withing a single field
@@ -41,7 +41,7 @@ public abstract class MouseHandler extends MouseAdapter {
      *
      * @param fieldDim dimension of a single field
      * @param diameter diameter of a clickable circle withing a single field
-     * @param offset   use this if fields are shifted by offset pixels
+     * @param offset   use this if fields are shifted by offset, in pixels
      */
     public MouseHandler(Dimension fieldDim, int diameter, Pair offset) {
         this.offset = offset;
@@ -60,20 +60,20 @@ public abstract class MouseHandler extends MouseAdapter {
     @Override
     public void mousePressed(MouseEvent e) {
         start = getPosition(e.getPoint());
+        if (start == null || !startCheck(start))
+            return; //player did not press on any field, or pressed on a field that they do not have a pawn on
         setFieldSelection(start, true);
 
     }
 
     @Override
     public void mouseReleased(MouseEvent e) {
-        if (start == null || !startCheck(start))
-            return; //player did not press on any field, or pressed on a field that they do not have a pawn on
+        setFieldSelection(start, false);
         Pair end = getPosition(e.getPoint());
         if (end == null || start.equals(end))
             return; //no need to send a movement that does not do anything
         if (endCheck(end))
             send(new Packet.PacketBuilder().code(Packet.Codes.TURN_MOVE).start(start).end(end).build());
-        setFieldSelection(start, false);
     }
 
     /**
