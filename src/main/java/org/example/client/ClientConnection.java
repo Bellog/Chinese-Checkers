@@ -5,6 +5,7 @@ import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
 import org.example.connection.ConnectionHelper;
 import org.example.connection.Packet;
 
+import java.awt.*;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -23,7 +24,6 @@ public class ClientConnection implements IClientConnection {
     private final AtomicReference<ObjectOutputStream> output = new AtomicReference<>();
     private final Socket socket;
     private final IClient client;
-    private volatile boolean isInitialized = false;
     private final ReentrantLock LOCK = new ReentrantLock();
 
     /**
@@ -34,20 +34,11 @@ public class ClientConnection implements IClientConnection {
     public ClientConnection(IClient client) {
         this.client = client;
         socket = new Socket();
-        new Thread(() -> {
-            try {
-                init();
-            } catch (Exception e) {
-                client.receive(new Packet.PacketBuilder().code(Packet.Codes.CONNECTION_LOST)
-                        .message(e.getMessage()).build());
-            }
-        }).start();
     }
 
-    /**
-     * Initialises a connection between user and the server.
-     */
-    private void init() throws Exception {
+    @Override
+    public void init(Dimension fieldDim) throws Exception {
+
         MavenXpp3Reader reader = new MavenXpp3Reader();
         Model model = reader.read(new FileReader("pom.xml"));
         String version = model.getVersion();
@@ -73,6 +64,11 @@ public class ClientConnection implements IClientConnection {
                 output.get().close();
                 socket.close();
                 throw new Exception("Version mismatch: your version: " + version + ", server version: " + c.version);
+            } else {
+                output.get().reset();
+                output.get().writeUnshared(new Packet.PacketBuilder()
+                        .code(Packet.Codes.APP_INFO).fieldDim(fieldDim).build());
+                output.get().flush();
             }
         } catch (IOException | ClassNotFoundException | ClassCastException e) {
             throw new Exception();
@@ -81,8 +77,6 @@ public class ClientConnection implements IClientConnection {
         client.receive(new Packet.PacketBuilder().code(Packet.Codes.INFO)
                 .message("Found a game!").build());
         new Thread(this::handleServerInput).start();
-        // TODO send fieldDim to server
-        isInitialized = true;
     }
 
     @Override
@@ -114,10 +108,5 @@ public class ClientConnection implements IClientConnection {
                 return;
             }
         }
-    }
-
-    @Override
-    public boolean isInitialized() {
-        return isInitialized;
     }
 }

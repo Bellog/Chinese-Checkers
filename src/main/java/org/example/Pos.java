@@ -7,15 +7,15 @@ import java.io.Serializable;
  * This program requires sending pair of numbers (position in 2d arrays or {@link org.example.client.Field}'s state
  * Pair class makes it easier to send such values.
  */
-public final class Pair implements Serializable {
+public final class Pos implements Serializable {
     private static final long serialVersionUID = 1003L;
 
-    public final int first;
-    public final int second;
+    public final int x;
+    public final int y;
 
-    public Pair(int first, int second) {
-        this.first = first;
-        this.second = second;
+    public Pos(int x, int y) {
+        this.x = x;
+        this.y = y;
     }
 
     @Override
@@ -23,14 +23,14 @@ public final class Pair implements Serializable {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        Pair pair = (Pair) o;
+        Pos pos = (Pos) o;
 
-        if (first != pair.first) return false;
-        return second == pair.second;
+        if (x != pos.x) return false;
+        return y == pos.y;
     }
 
     @Override
     public String toString() {
-        return "(" + first + ", " + second + ")";
+        return "(" + x + ", " + y + ")";
     }
 }

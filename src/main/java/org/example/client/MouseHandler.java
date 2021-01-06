@@ -1,6 +1,6 @@
 package org.example.client;
 
-import org.example.Pair;
+import org.example.Pos;
 import org.example.connection.Packet;
 
 import java.awt.*;
@@ -18,13 +18,13 @@ public abstract class MouseHandler extends MouseAdapter {
      * Dimensions of a field in client GUI, used to determine position of a field that player clicked
      */
     private final Dimension fieldDim;
-    private final Pair offset;
+    private final Pos offset;
     /**
      * In GUI, each field is a circle, this object helps determining whether a mouseclick happened within a field
      * or outside of it.
      */
     private final Ellipse2D.Double fieldDisk;
-    private Pair start;
+    private Pos start;
 
     /**
      * Instantiates this class with specified field dimension, diameter and no offset
@@ -33,7 +33,7 @@ public abstract class MouseHandler extends MouseAdapter {
      * @param diameter diameter of a clickable circle withing a single field
      */
     public MouseHandler(Dimension fieldDim, int diameter) {
-        this(fieldDim, diameter, new Pair(0, 0));
+        this(fieldDim, diameter, new Pos(0, 0));
     }
 
     /**
@@ -43,16 +43,16 @@ public abstract class MouseHandler extends MouseAdapter {
      * @param diameter diameter of a clickable circle withing a single field
      * @param offset   use this if fields are shifted by offset, in pixels
      */
-    public MouseHandler(Dimension fieldDim, int diameter, Pair offset) {
+    public MouseHandler(Dimension fieldDim, int diameter, Pos offset) {
         this.offset = offset;
         this.fieldDim = fieldDim;
         fieldDisk = new Ellipse2D.Double(((double) fieldDim.width - diameter) / 2,
                 ((double) fieldDim.height - diameter) / 2, diameter, diameter);
     }
 
-    private Pair getPosition(Point p) {
+    private Pos getPosition(Point p) {
         if (fieldDisk.contains(p.x % fieldDim.width, p.y % fieldDim.height))
-            return new Pair((p.x - offset.first) / fieldDim.width, (p.y - offset.second) / fieldDim.height);
+            return new Pos((p.x - offset.x) / fieldDim.width, (p.y - offset.y) / fieldDim.height);
         else
             return null;
     }
@@ -71,7 +71,7 @@ public abstract class MouseHandler extends MouseAdapter {
         if (start == null)
             return;
         setFieldSelection(start, false);
-        Pair end = getPosition(e.getPoint());
+        Pos end = getPosition(e.getPoint());
         if (end == null || start.equals(end))
             return; //no need to send a movement that does not do anything
         if (endCheck(end))
@@ -85,7 +85,7 @@ public abstract class MouseHandler extends MouseAdapter {
      * @param pos      position to set selection to
      * @param selected selection state
      */
-    protected abstract void setFieldSelection(Pair pos, boolean selected);
+    protected abstract void setFieldSelection(Pos pos, boolean selected);
 
     /**
      * Checks whether a field is occupied by the player. <br>
@@ -94,7 +94,7 @@ public abstract class MouseHandler extends MouseAdapter {
      * @param pos check field at this position
      * @return true if field at pos is a field occupied by the player, false otherwise
      */
-    protected abstract boolean startCheck(Pair pos);
+    protected abstract boolean startCheck(Pos pos);
 
     /**
      * Checks whether a player can move their pawn to. <br>
@@ -104,7 +104,7 @@ public abstract class MouseHandler extends MouseAdapter {
      * @return true if field at pos is a field player can move to (i.e. field exists), false otherwise. <br>
      * This method must not include any logic that would interfere with any gameMode
      */
-    protected abstract boolean endCheck(Pair pos);
+    protected abstract boolean endCheck(Pos pos);
 
     /**
      * Sends packet to the server. <br>

@@ -1,6 +1,6 @@
 package org.example.server.gameModes;
 
-import org.example.Pair;
+import org.example.Pos;
 
 import java.awt.*;
 import java.util.List;
@@ -11,18 +11,6 @@ class BasicGameMode extends AbstractGameMode {
 
     public BasicGameMode(int maxPlayers) {
         super(maxPlayers, List.of(Color.RED, Color.GREEN, Color.BLUE, Color.CYAN, Color.MAGENTA, Color.YELLOW));
-
-        for (int y = 0; y < defaultBoard.size(); y++) {
-            board.add(new ArrayList<>());
-            for (int x = 0; x < defaultBoard.get(0).size(); x++) {
-                if (defaultBoard.get(y).get(x) != null && defaultBoard.get(y).get(x) > -2) {
-                    if (defaultBoard.get(y).get(x) == -1)
-                        board.get(y).add(-1);
-                    else board.get(y).add(playerBases.get(maxPlayers).get(defaultBoard.get(y).get(x)));
-                } else
-                    board.get(y).add(null);
-            }
-        }
     }
 
     @Override
@@ -63,14 +51,17 @@ class BasicGameMode extends AbstractGameMode {
         return map;
     }
 
-    protected List<List<Pair>> getWinCondition() {
-        List<List<Pair>> list = new ArrayList<>();
-        for (int i = 0; i < maxPlayers; i++) {
+    @Override
+    protected List<List<Pos>> getWinCondition() {
+        List<List<Pos>> list = new ArrayList<>();
+        for (int player = 0; player < maxPlayers; player++) {
             list.add(new ArrayList<>());
-            for (int j = 0; j < defaultBoard.size(); j++) {
-                for (int k = 0; k < defaultBoard.get(j).size(); k++) {
-                    if (defaultBoard.get(j).get(k) == (i + 3) % 6)
-                        list.get(i).add(new Pair(k, j));
+            for (int y = 0; y < board.size(); y++) {
+                for (int x = 0; x < board.get(y).size(); x++) {
+                    if (board.get(y).get(x) != null && board.get(y).get(x) == player)
+                        list.get(player).add(new Pos(board.get(0).size() - 1 - x, board.size() - 1 - y));
+                    // board is symmetrical, so that if (x,y) is player's base, then (maxX -x, maxY - y)
+                    // is one of the fields that player needs to go to
                 }
             }
         }
@@ -78,8 +69,8 @@ class BasicGameMode extends AbstractGameMode {
     }
 
     @Override
-    protected List<Pair> getNeighbors(Pair pos) {
-        List<Pair> list = new ArrayList<>();
+    protected List<Pos> getNeighbors(Pos pos) {
+        List<Pos> list = new ArrayList<>();
 
         list.add(neighborCheck(pos, 1, -1));
         list.add(neighborCheck(pos, 2, 0));
@@ -92,28 +83,48 @@ class BasicGameMode extends AbstractGameMode {
     }
 
     @Override
-    protected List<Pair> getPossibleMoves(Pair pos) {
+    protected List<Pos> getPossibleMoves(Pos pos) {
         // if field state is -1 and is a neighbor then player can move there
         return getNeighbors(pos).stream()
-                .filter(p -> p != null && board.get(p.second).get(p.first) == -1)
+                .filter(p -> p != null && board.get(p.y).get(p.x) == -1)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public int winnerId() {
+    public List<Integer> getWinners() {
+        int place = (int) winners.stream().filter(Objects::nonNull).count();
         for (int i = 0; i < maxPlayers; i++) {
-            if (isWinner(i))
-                return i;
+            if (winners.get(i) == null && isWinner(i)) {
+                winners.set(i, place);
+                break;
+            }
         }
-        return -1;
+        return winners;
     }
 
-    protected boolean isWinner(int i) {
-        for (int j = 0; j < winCondition.get(i).size(); j++) {
-            if (board.get(winCondition.get(i).get(j).second).get(winCondition.get(i).get(j).first) != i)
-                return false;
+    protected boolean isWinner(int player) {
+        for (int j = 0; j < winCondition.get(player).size(); j++) {
+            if (board.get(winCondition.get(player).get(j).y).get(winCondition.get(player).get(j).x) == player)
+                return true;
         }
-        return true;
+        return false;
+    }
+
+    @Override
+    protected List<List<Integer>> getStartingBoard() {
+        List<List<Integer>> board = new ArrayList<>();
+        for (int y = 0; y < defaultBoard.size(); y++) {
+            board.add(new ArrayList<>());
+            for (int x = 0; x < defaultBoard.get(0).size(); x++) {
+                if (defaultBoard.get(y).get(x) != null && defaultBoard.get(y).get(x) > -2) {
+                    if (defaultBoard.get(y).get(x) == -1)
+                        board.get(y).add(-1);
+                    else board.get(y).add(playerMap.get(maxPlayers).get(defaultBoard.get(y).get(x)));
+                } else
+                    board.get(y).add(null);
+            }
+        }
+        return board;
     }
 
     /**
@@ -159,11 +170,6 @@ class BasicGameMode extends AbstractGameMode {
     }
 
     @Override
-    public int getNumberOfPlayers() {
-        return super.maxPlayers;
-    }
-
-    @Override
     public Integer getFieldInfo(int x, int y) {
         try {
             return board.get(y).get(x);
@@ -173,18 +179,18 @@ class BasicGameMode extends AbstractGameMode {
     }
 
     @Override
-    public boolean move(Pair p0, Pair p1) {
-        int state = getBoard().get(p1.second).get(p1.first);
+    public boolean move(Pos p0, Pos p1) {
+        int state = getBoard().get(p1.y).get(p1.x);
         if (state == -1) {
-            board.get(p1.second).set(p1.first, board.get(p0.second).get(p0.first));
-            board.get(p0.second).set(p0.first, state);
+            board.get(p1.y).set(p1.x, board.get(p0.y).get(p0.x));
+            board.get(p0.y).set(p0.x, state);
             return true;
         }
         return false;
     }
 
     @Override
-    public boolean canMove(Pair pos) {
+    public boolean canMove(Pos pos) {
         return true;
     }
 

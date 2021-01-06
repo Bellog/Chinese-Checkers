@@ -26,7 +26,7 @@ public abstract class SidePanel extends JPanel {
      * Table like JPanel that shows playerInfo in graphical form.
      * <br> See {@link Packet} for more information on playerInfo.
      */
-    private JPanel playerTable;
+    private final JPanel playerTable;
 
     /**
      * Creates side panel based on provided parameters
@@ -84,16 +84,34 @@ public abstract class SidePanel extends JPanel {
      * Updates player info
      *
      * @param playerInfo updates player info only if it is it the same format as the one used at instantiation
-     *                   of this object.
+     *                   of this object. Otherwise, it closes the program
      */
     public void updatePlayerInfo(List<List<String>> playerInfo) {
-        remove(1);
-        playerTable = getPlayerTable(playerInfo);
-        add(playerTable, 1);
+        try {
+            var comps = playerTable.getComponents();
+            for (int i = 1; i < 3; i++) {
+                JPanel panel = (JPanel) comps[i];
+                for (int j = 0; j < playerInfo.size(); j++) {
+                    ((JTextField) panel.getComponents()[j]).setText(playerInfo.get(j).get(i - 1));
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("connection error, closing the program");
+            System.exit(1);
+        }
     }
 
     private JPanel createButtonPanel() {
-        var panel = getPanel(endTurnButton, resetTurnButton);
+        var panel = new JPanel();
+        panel.setBackground(Color.WHITE);
+        panel.setLayout(new GridBagLayout());
+        var con = new GridBagConstraints();
+        con.fill = GridBagConstraints.NONE;
+        con.anchor = GridBagConstraints.CENTER;
+        con.gridx = 0;
+        panel.add(endTurnButton, con);
+        con.gridx = 1;
+        panel.add(resetTurnButton, con);
         panel.setMaximumSize(panel.getPreferredSize());
         return panel;
     }
@@ -134,33 +152,30 @@ public abstract class SidePanel extends JPanel {
     private JPanel getPlayerTable(List<List<String>> info) {
         var posColumn = new JPanel();
         var playerColumn = new JPanel();
-        var panel = getPanel(playerColumn, posColumn);
-
-        playerColumn.setBackground(Color.LIGHT_GRAY);
-        posColumn.setBackground(Color.LIGHT_GRAY);
-        playerColumn.setLayout(new BoxLayout(playerColumn, BoxLayout.Y_AXIS));
-        posColumn.setLayout(new BoxLayout(posColumn, BoxLayout.Y_AXIS));
-
-        CreateTableContents(info, playerColumn, posColumn);
-        panel.setMaximumSize(panel.getPreferredSize());
-        return panel;
-    }
-
-    private JPanel getPanel(JComponent comp1, JComponent comp2) {
-        JPanel panel = new JPanel();
+        var colorColumn = new JPanel();
+        var panel = new JPanel();
         panel.setBackground(Color.WHITE);
         panel.setLayout(new GridBagLayout());
         var con = new GridBagConstraints();
         con.anchor = GridBagConstraints.CENTER;
         con.fill = GridBagConstraints.NONE;
         con.gridx = 0;
-        panel.add(comp1, con);
+        panel.add(colorColumn, con);
         con.gridx = 1;
-        panel.add(comp2, con);
+        panel.add(playerColumn, con);
+        con.gridx = 2;
+        panel.add(posColumn, con);
+
+        playerColumn.setLayout(new BoxLayout(playerColumn, BoxLayout.Y_AXIS));
+        posColumn.setLayout(new BoxLayout(posColumn, BoxLayout.Y_AXIS));
+        colorColumn.setLayout(new BoxLayout(colorColumn, BoxLayout.Y_AXIS));
+
+        CreateTableContents(info, playerColumn, posColumn, colorColumn);
+        panel.setMaximumSize(panel.getPreferredSize());
         return panel;
     }
 
-    private void CreateTableContents(List<List<String>> info, JPanel playerColumn, JPanel posColumn) {
+    private void CreateTableContents(List<List<String>> info, JPanel playerColumn, JPanel posColumn, JPanel colorColumn) {
         int maxPlayerColWidth = 0;
         int maxPosColWidth = 0;
         for (List<String> row : info) {
@@ -171,10 +186,21 @@ public abstract class SidePanel extends JPanel {
         }
 
         for (int i = 0; i < info.size(); i++) {
+            JTextField col = new JTextField(" ");
+            if (i > 0)
+                col.setBackground(colorScheme.get(i - 1));
+            else {
+                col.setText("Color");
+                col.setBackground(Color.WHITE);
+            }
+            col.setColumns(maxPosColWidth);
+            col.setHorizontalAlignment(SwingConstants.CENTER);
+            col.setFont(font.deriveFont(Font.BOLD));
+            col.setEditable(false);
+            colorColumn.add(col);
+
             JTextField player = new JTextField(info.get(i).get(0));
             player.setColumns(maxPlayerColWidth);
-            if (i > 0)
-                player.setForeground(colorScheme.get(i - 1));
             player.setBackground(Color.WHITE);
             player.setHorizontalAlignment(SwingConstants.CENTER);
             player.setFont(font.deriveFont(Font.BOLD));

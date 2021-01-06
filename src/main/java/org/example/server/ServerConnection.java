@@ -12,10 +12,10 @@ import java.util.concurrent.atomic.AtomicReference;
 public class ServerConnection implements IServerConnection {
 
     private final AtomicReference<ServerSocket> serverSocket = new AtomicReference<>();
-    private final List<PlayerConnection> players = new ArrayList<>();
+    private final List<IPlayerConnection> players = new ArrayList<>();
     private final IServer server;
 
-    public ServerConnection(IServer server, int maxPlayer) {
+    public ServerConnection(IServer server, int maxPlayers) {
         this.server = server;
 
         try {
@@ -36,7 +36,7 @@ public class ServerConnection implements IServerConnection {
             System.exit(1);
         }
 
-        for (int i = 0; i < maxPlayer; i++)
+        for (int i = 0; i < maxPlayers; i++)
             players.add(null);
     }
 
