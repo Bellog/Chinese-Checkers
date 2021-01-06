@@ -5,8 +5,9 @@ import org.example.Pair;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.*;
+import java.util.Map;
 
 /**
  * Interface used to implement various game modes.
@@ -15,24 +16,18 @@ public abstract class AbstractGameMode {
     protected final List<List<Integer>> board;
     protected final int maxPlayers;
     protected final List<List<Integer>> defaultBoard = getDefaultBoard();
-    protected final Map<Integer, Map<Integer, Integer>> playerBases = getPlayerBases();
+    protected final Map<Integer, Map<Integer, Integer>> playerBases = getPlayerMap();
     protected final List<List<Pair>> winCondition = getWinCondition();
+    protected final List<Color> colorScheme;
     public List<Pair> tempMoveList = new ArrayList<>();
 
-    /**
-     * Every concrete child should implement logic based on maxPlayers
-     *
-     * @param maxPlayers maximum number of players in the game
-     */
-    protected AbstractGameMode(int maxPlayers) {
+    protected AbstractGameMode(int maxPlayers, List<Color> colorScheme) {
         this.maxPlayers = maxPlayers;
-        //this.possiblePlayerNumbers = new ArrayList<>();
+        this.colorScheme = colorScheme;
         this.board = new ArrayList<>();
     }
 
-    //protected abstract void setPlayerNumbers();
-
-    protected abstract Map<Integer, Map<Integer, Integer>> getPlayerBases();
+    protected abstract Map<Integer, Map<Integer, Integer>> getPlayerMap();
 
     protected abstract List<List<Pair>> getWinCondition();
 
@@ -97,12 +92,6 @@ public abstract class AbstractGameMode {
         return board;
     }
 
-    /**
-     * Returns winner's id, -1 if there is no winner
-     *
-     * @return winner's id, -1 if there is no winner
-     */
-
     public final ImageIcon getBoardBackground(Dimension fieldDim) {
         var background = new BoardBackgroundGenerator(fieldDim);
         return background.background;
@@ -135,10 +124,15 @@ public abstract class AbstractGameMode {
     public void rollBack() {
         if (tempMoveList.isEmpty())
             return;
-        Collections.swap(tempMoveList, tempMoveList.size() - 1, 0);
+        var start = tempMoveList.get(0);
+        var end = tempMoveList.get(tempMoveList.size() - 1);
+        int swap = board.get(start.second).get(start.first);
+        board.get(start.second).set(start.first, board.get(end.second).get(end.first));
+        board.get(end.second).set(end.first, swap);
+        tempMoveList = new ArrayList<>(); //clear tempMoveList
     }
 
-    abstract public boolean canMove();
+    abstract public boolean canMove(Pair pos);
 
     abstract public int winnerId();
 
@@ -247,7 +241,7 @@ public abstract class AbstractGameMode {
                     (neigh0.second + 1) * fieldDim.height + fieldDim.height / 2,
                     (neigh1.second + 1) * fieldDim.height + fieldDim.height / 2};
 
-            g.setColor(getColorScheme().get(defaultBoard.get(pos.second).get(pos.first)));
+            g.setColor(colorScheme.get(defaultBoard.get(pos.second).get(pos.first)));
             g.fillPolygon(xs, ys, 3);
         }
     }

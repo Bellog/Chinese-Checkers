@@ -84,7 +84,12 @@ public abstract class GameHandler {
                                 .board(game.getBoard()).build());
             }
             case TURN_END -> endTurn();
-            case TURN_ROLLBACK -> game.rollBack();
+            case TURN_ROLLBACK -> {
+                game.rollBack();
+                for (int i = 0; i < game.getNumberOfPlayers(); i++)
+                    sendToPlayer(i, new Packet.PacketBuilder().code(Packet.Codes.BOARD_UPDATE)
+                            .board(game.getBoard()).build());
+            }
         }
         LOCK.unlock();
     }

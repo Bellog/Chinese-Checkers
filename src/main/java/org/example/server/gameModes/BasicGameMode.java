@@ -3,24 +3,14 @@ package org.example.server.gameModes;
 import org.example.Pair;
 
 import java.awt.*;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.stream.Collectors;
 
 class BasicGameMode extends AbstractGameMode {
 
-    //TODO make it so that you choose game mode in cli when server starts
-    private final List<Color> colorScheme = List.of(Color.RED, Color.GREEN, Color.BLUE, Color.CYAN, Color.MAGENTA, Color.YELLOW);
-
-    // for compatibility sake
-    public BasicGameMode() {
-        this(2);
-    }
-
     public BasicGameMode(int maxPlayers) {
-        super(maxPlayers);
+        super(maxPlayers, List.of(Color.RED, Color.GREEN, Color.BLUE, Color.CYAN, Color.MAGENTA, Color.YELLOW));
 
         for (int y = 0; y < defaultBoard.size(); y++) {
             board.add(new ArrayList<>());
@@ -35,32 +25,8 @@ class BasicGameMode extends AbstractGameMode {
         }
     }
 
-    /*
-    /**
-     * Helper method that determines whether particular field from baseBoard is a base
-     * according to number of players
-     * <p></p> Offload entire logic with respect to number of players
-     *
-     * @param pos position to check
-     * @return whether field is a base according to number of players
-     */
-    /*
-    private boolean isCorrectBase(Pair pos) {
-        return switch (maxPlayers) {
-            case 2 -> List.of(0, 3).contains(defaultBoard.get(pos.second).get(pos.first));
-            case 3 -> List.of(0, 1, 5).contains(defaultBoard.get(pos.second).get(pos.first));
-            case 4 -> List.of(1, 2, 4, 5).contains(defaultBoard.get(pos.second).get(pos.first));
-            case 6 -> true;
-            default -> false;
-        };
-    }
-
-     */
-
-    /**
-     * Determines which starting fields belong to which player, according to number of players
-     */
-    protected Map<Integer, Map<Integer, Integer>> getPlayerBases() {
+    @Override
+    protected Map<Integer, Map<Integer, Integer>> getPlayerMap() {
         Map<Integer, Map<Integer, Integer>> map = new TreeMap<>();
         map.put(2, new TreeMap<>() {{
             put(0, 0);
@@ -79,11 +45,20 @@ class BasicGameMode extends AbstractGameMode {
             put(5, 2);
         }});
         map.put(4, new TreeMap<>() {{
-            put(0, -1); put(1, 0); put(2, 1); put(3, -1); put(4, 2); put(5, 3);
+            put(0, -1);
+            put(1, 0);
+            put(2, 1);
+            put(3, -1);
+            put(4, 2);
+            put(5, 3);
         }});
-        map.put(6, new TreeMap<>()
-        {{
-            put(0, 0); put(1, 1); put(2, 2); put(3, 3); put(4, 4); put(5, 5);
+        map.put(6, new TreeMap<>() {{
+            put(0, 0);
+            put(1, 1);
+            put(2, 2);
+            put(3, 3);
+            put(4, 4);
+            put(5, 5);
         }});
         return map;
     }
@@ -94,7 +69,7 @@ class BasicGameMode extends AbstractGameMode {
             list.add(new ArrayList<>());
             for (int j = 0; j < defaultBoard.size(); j++) {
                 for (int k = 0; k < defaultBoard.get(j).size(); k++) {
-                    if (defaultBoard.get(j).get(k) == (i+3)%6)
+                    if (defaultBoard.get(j).get(k) == (i + 3) % 6)
                         list.get(i).add(new Pair(k, j));
                 }
             }
@@ -133,7 +108,7 @@ class BasicGameMode extends AbstractGameMode {
         return -1;
     }
 
-    protected boolean isWinner (int i) {
+    protected boolean isWinner(int i) {
         for (int j = 0; j < winCondition.get(i).size(); j++) {
             if (board.get(winCondition.get(i).get(j).second).get(winCondition.get(i).get(j).first) != i)
                 return false;
@@ -209,13 +184,26 @@ class BasicGameMode extends AbstractGameMode {
     }
 
     @Override
-    public boolean canMove() {
+    public boolean canMove(Pair pos) {
         return true;
     }
 
     @Override
     public List<Color> getColorScheme() {
-        return colorScheme;
+        var map = getPlayerMap().get(getNumberOfPlayers());
+        List<Color> colors = new ArrayList<>();
+        for (int i = 0; i < map.size(); i++) {
+            colors.add(null);
+        }
+        // this loop adds only those colors that have their bases in the game (i.e. only for players 1 and 3)
+        // by removing nulls from colors afterwards, the result is effectively applying this map onto colorscheme
+        for (Map.Entry<Integer, Integer> entry : map.entrySet()) {
+            if (entry.getValue() != -1) {
+                colors.add(entry.getValue(), colorScheme.get(entry.getKey()));
+            }
+        }
+
+        return colors.stream().filter(Objects::nonNull).collect(Collectors.toList());
     }
 
 }

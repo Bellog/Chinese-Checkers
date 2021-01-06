@@ -81,7 +81,7 @@ public abstract class PlayerConnection implements IPlayerConnection {
     protected abstract void handlePacket(Packet packet);
 
     @Override
-    public void send(Packet packet) {
+    public synchronized void send(Packet packet) {
         if (isActive)
             new Thread(() -> {
                 try {
@@ -93,7 +93,6 @@ public abstract class PlayerConnection implements IPlayerConnection {
                 } catch (IOException e) {
                     LOCK.unlock();
                     if (isActive) {
-                        e.printStackTrace();
                         isActive = false;
                         handlePacket(new Packet.PacketBuilder()
                                 .code(Packet.Codes.CONNECTION_LOST).build());

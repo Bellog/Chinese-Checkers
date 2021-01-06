@@ -93,15 +93,7 @@ public abstract class SidePanel extends JPanel {
     }
 
     private JPanel createButtonPanel() {
-        var panel = new JPanel();
-        panel.setLayout(new GridBagLayout());
-        var con = new GridBagConstraints();
-        con.anchor = GridBagConstraints.CENTER;
-        con.fill = GridBagConstraints.NONE;
-        con.gridx = 0;
-        panel.add(endTurnButton, con);
-        con.gridx = 1;
-        panel.add(resetTurnButton, con);
+        var panel = getPanel(endTurnButton, resetTurnButton);
         panel.setMaximumSize(panel.getPreferredSize());
         return panel;
     }
@@ -140,25 +132,31 @@ public abstract class SidePanel extends JPanel {
     }
 
     private JPanel getPlayerTable(List<List<String>> info) {
-        var panel = new JPanel();
-        var playerColumn = new JPanel();
         var posColumn = new JPanel();
+        var playerColumn = new JPanel();
+        var panel = getPanel(playerColumn, posColumn);
 
+        playerColumn.setBackground(Color.LIGHT_GRAY);
+        posColumn.setBackground(Color.LIGHT_GRAY);
+        playerColumn.setLayout(new BoxLayout(playerColumn, BoxLayout.Y_AXIS));
+        posColumn.setLayout(new BoxLayout(posColumn, BoxLayout.Y_AXIS));
+
+        CreateTableContents(info, playerColumn, posColumn);
+        panel.setMaximumSize(panel.getPreferredSize());
+        return panel;
+    }
+
+    private JPanel getPanel(JComponent comp1, JComponent comp2) {
+        JPanel panel = new JPanel();
         panel.setBackground(Color.WHITE);
         panel.setLayout(new GridBagLayout());
         var con = new GridBagConstraints();
         con.anchor = GridBagConstraints.CENTER;
         con.fill = GridBagConstraints.NONE;
         con.gridx = 0;
-        panel.add(playerColumn, con);
-        con.gridy = 0;
-        panel.add(posColumn, con);
-
-        playerColumn.setLayout(new BoxLayout(playerColumn, BoxLayout.Y_AXIS));
-        posColumn.setLayout(new BoxLayout(posColumn, BoxLayout.Y_AXIS));
-
-        CreateTableContents(info, playerColumn, posColumn);
-        panel.setMaximumSize(panel.getPreferredSize());
+        panel.add(comp1, con);
+        con.gridx = 1;
+        panel.add(comp2, con);
         return panel;
     }
 
@@ -179,7 +177,7 @@ public abstract class SidePanel extends JPanel {
                 player.setForeground(colorScheme.get(i - 1));
             player.setBackground(Color.WHITE);
             player.setHorizontalAlignment(SwingConstants.CENTER);
-            player.setFont(font);
+            player.setFont(font.deriveFont(Font.BOLD));
             player.setEditable(false);
             playerColumn.add(player);
 
@@ -187,7 +185,7 @@ public abstract class SidePanel extends JPanel {
             pos.setBackground(Color.WHITE);
             pos.setColumns(maxPosColWidth);
             pos.setHorizontalAlignment(SwingConstants.CENTER);
-            pos.setFont(font);
+            pos.setFont(font.deriveFont(Font.BOLD));
             pos.setEditable(false);
             posColumn.add(pos);
         }

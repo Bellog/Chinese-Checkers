@@ -86,7 +86,7 @@ public class ClientConnection implements IClientConnection {
     }
 
     @Override
-    public void send(Packet packet) {
+    public synchronized void send(Packet packet) {
         new Thread(() -> {
             try {
                 LOCK.lock();
@@ -109,7 +109,6 @@ public class ClientConnection implements IClientConnection {
                 if (packet != null)
                     client.receive(packet);
             } catch (IOException | ClassNotFoundException | ClassCastException e) {
-                e.printStackTrace();
                 client.receive(new Packet.PacketBuilder().code(Packet.Codes.CONNECTION_LOST)
                         .message("Connection lost on receive").build());
                 return;

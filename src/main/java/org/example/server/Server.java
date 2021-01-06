@@ -85,6 +85,7 @@ public class Server implements IServer {
         if (packet.getCode() == Packet.Codes.CONNECTION_LOST) {
             System.out.println("Lost connection to player " + player + ", pausing the game");
             disconnected.incrementAndGet();
+            gameHandler.handleInput(player, new Packet.PacketBuilder().code(Packet.Codes.TURN_ROLLBACK).build());
             for (int i = 0; i < gameHandler.getNumberOfPlayers(); i++)
                 conn.sendToPlayer(i, new Packet.PacketBuilder().code(Packet.Codes.GAME_RESUME)
                         .message("Player" + player + " disconnected, pausing the game.").build());
