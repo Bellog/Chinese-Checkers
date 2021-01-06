@@ -29,6 +29,10 @@ class StandardGameMode extends BasicGameMode {
             else
                 list.removeAll(getNeighbors(pos));
         }
+        int player = board.get(tempMoveList.get(tempMoveList.size() - 1).second)
+                .get(tempMoveList.get(tempMoveList.size() - 1).first);
+        if (winCondition.get(player).contains(pos))
+            list.removeIf(p -> !winCondition.get(player).contains(p));
         return list.stream()
                 // filter for empty fields
                 .filter(p -> p != null && board.get(p.second).get(p.first) == -1)
