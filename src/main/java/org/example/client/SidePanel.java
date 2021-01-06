@@ -8,9 +8,11 @@ import java.awt.*;
 import java.util.List;
 
 /**
- * JPanel showing information about players,
+ * JPanel showing information about players, game logs, and lets user end or rollback turn.
+ * Requires overriding {@link #send(Packet)} method in order to use.
  */
 public abstract class SidePanel extends JPanel {
+
     private final JButton endTurnButton;
     private final JButton resetTurnButton;
     private final Font font = new Font("Tahoma", Font.PLAIN, 12);
@@ -73,8 +75,18 @@ public abstract class SidePanel extends JPanel {
         gameLogs.insert("> " + text + "\n", 0);
     }
 
+    /**
+     * This method should send packets to the server.
+     *
+     * @param packet packet to send
+     */
     public abstract void send(Packet packet);
 
+    /**
+     * Sets status of this panel's buttons
+     *
+     * @param status status
+     */
     public void setStatus(boolean status) {
         endTurnButton.setEnabled(status);
         resetTurnButton.setEnabled(status);
@@ -101,6 +113,27 @@ public abstract class SidePanel extends JPanel {
         }
     }
 
+    /**
+     * Helper method, extracted from constructor
+     *
+     * @return not null
+     */
+    private JTextArea getGameLogs() {
+        JTextArea gameLogs = new JTextArea();
+        gameLogs.setText("GAME LOGS\n");
+        ((DefaultCaret) gameLogs.getCaret()).setUpdatePolicy(DefaultCaret.NEVER_UPDATE);
+        gameLogs.setColumns(50);
+        gameLogs.setEditable(false);
+        gameLogs.setFont(font);
+        gameLogs.setLineWrap(true);
+        return gameLogs;
+    }
+
+    /**
+     * Helper method, extracted from constructor
+     *
+     * @return not null
+     */
     private JPanel createButtonPanel() {
         var panel = new JPanel();
         panel.setBackground(Color.WHITE);
@@ -116,17 +149,11 @@ public abstract class SidePanel extends JPanel {
         return panel;
     }
 
-    private JTextArea getGameLogs() {
-        JTextArea gameLogs = new JTextArea();
-        gameLogs.setText("GAME LOGS\n");
-        ((DefaultCaret) gameLogs.getCaret()).setUpdatePolicy(DefaultCaret.NEVER_UPDATE);
-        gameLogs.setColumns(50);
-        gameLogs.setEditable(false);
-        gameLogs.setFont(font);
-        gameLogs.setLineWrap(true);
-        return gameLogs;
-    }
-
+    /**
+     * Helper method, extracted from constructor
+     *
+     * @return not null
+     */
     private JButton getResetTurnButton() {
         final JButton resetTurnButton;
         resetTurnButton = new JButton("reset turn");
@@ -138,6 +165,11 @@ public abstract class SidePanel extends JPanel {
         return resetTurnButton;
     }
 
+    /**
+     * Helper method, extracted from constructor
+     *
+     * @return not null
+     */
     private JButton getEndTurnButton() {
         final JButton endTurnButton;
         endTurnButton = new JButton("end turn");
@@ -149,6 +181,11 @@ public abstract class SidePanel extends JPanel {
         return endTurnButton;
     }
 
+    /**
+     * Helper method, extracted from constructor
+     *
+     * @return not null
+     */
     private JPanel getPlayerTable(List<List<String>> info) {
         var posColumn = new JPanel();
         var playerColumn = new JPanel();
@@ -175,6 +212,9 @@ public abstract class SidePanel extends JPanel {
         return panel;
     }
 
+    /**
+     * Helper method, extracted from getPlayerTable
+     */
     private void CreateTableContents(List<List<String>> info, JPanel playerColumn, JPanel posColumn, JPanel colorColumn) {
         int maxPlayerColWidth = 0;
         int maxPosColWidth = 0;

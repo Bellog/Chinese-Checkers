@@ -32,7 +32,17 @@ public class Client implements IClient {
         new Client();
     }
 
-    public void startGame(List<Color> colorScheme, int playerId, List<List<Integer>> board, ImageIcon boardBackground, List<List<String>> playerInfo) {
+    /**
+     * Initializes GUI
+     *
+     * @param colorScheme     not null
+     * @param playerId        not null
+     * @param board           not null
+     * @param boardBackground not null
+     * @param playerInfo      not null
+     * @see org.example.server.gameModes.AbstractGameMode
+     */
+    private void startGame(List<Color> colorScheme, int playerId, List<List<Integer>> board, ImageIcon boardBackground, List<List<String>> playerInfo) {
         if (frame != null || gamePanel != null || sidePanel != null)
             return; //if either of these is not null, then start game was already called
 
@@ -70,6 +80,11 @@ public class Client implements IClient {
             sidePanel.setStatus(status);
     }
 
+    /**
+     * Logs to gui, if unavailable, falls back to stdout
+     *
+     * @param message message to show
+     */
     private void log(String message) {
         if (message != null) {
             if (sidePanel != null)
@@ -80,7 +95,7 @@ public class Client implements IClient {
     }
 
     @Override
-    public synchronized void receive(Packet packet) {
+    public synchronized void handlePacket(Packet packet) {
         switch (packet.getCode()) {
             case GAME_START -> startGame(packet.getColorScheme(), packet.getPlayerId(),
                     packet.getBoard(), packet.getImage(), packet.getPlayerInfo());

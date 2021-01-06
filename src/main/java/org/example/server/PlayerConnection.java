@@ -13,6 +13,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 
+/**
+ * Class used to handle a player connection, requires overriding {@link #handlePacket(Packet)} method in order to use.
+ */
 public abstract class PlayerConnection implements IPlayerConnection {
     private final AtomicReference<ObjectInputStream> input = new AtomicReference<>();
     private final AtomicReference<ObjectOutputStream> output = new AtomicReference<>();
@@ -20,6 +23,9 @@ public abstract class PlayerConnection implements IPlayerConnection {
     private final Socket socket;
     private final String version;
     private final ReentrantLock LOCK = new ReentrantLock();
+    /**
+     * prevents error messages to be sent indefinitely and helps closing input/output handlers regardless of error type.
+     */
     private volatile boolean isActive = false;
 
     /**
@@ -67,6 +73,9 @@ public abstract class PlayerConnection implements IPlayerConnection {
         return true;
     }
 
+    /**
+     * Handles objectInputStream
+     */
     private void handleInput() {
         while (!socket.isClosed() && socket.isConnected() && isActive) {
             try {
@@ -83,6 +92,9 @@ public abstract class PlayerConnection implements IPlayerConnection {
         }
     }
 
+    /**
+     * handles objectOutputStream
+     */
     private void handleOutput() {
         while (!socket.isClosed() && socket.isConnected() && isActive) {
             try {
@@ -107,6 +119,11 @@ public abstract class PlayerConnection implements IPlayerConnection {
         }
     }
 
+    /**
+     * This method is called whenever this receives a packet, it should provide logic for packet handling.
+     *
+     * @param packet not null
+     */
     protected abstract void handlePacket(Packet packet);
 
     @Override

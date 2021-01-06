@@ -74,7 +74,7 @@ public class ClientConnection implements IClientConnection {
             throw new Exception();
         }
 
-        client.receive(new Packet.PacketBuilder().code(Packet.Codes.INFO)
+        client.handlePacket(new Packet.PacketBuilder().code(Packet.Codes.INFO)
                 .message("Found a game!").build());
         new Thread(this::handleServerInput).start();
     }
@@ -90,20 +90,23 @@ public class ClientConnection implements IClientConnection {
                 LOCK.unlock();
             } catch (IOException e) {
                 LOCK.unlock();
-                client.receive(new Packet.PacketBuilder().code(Packet.Codes.CONNECTION_LOST)
+                client.handlePacket(new Packet.PacketBuilder().code(Packet.Codes.CONNECTION_LOST)
                         .message("Connection lost on send").build());
             }
         }).start();
     }
 
+    /**
+     * Handles objectInputStream
+     */
     private void handleServerInput() {
         while (socket.isConnected()) {
             try {
                 Packet packet = (Packet) input.get().readObject();
                 if (packet != null)
-                    client.receive(packet);
+                    client.handlePacket(packet);
             } catch (IOException | ClassNotFoundException | ClassCastException e) {
-                client.receive(new Packet.PacketBuilder().code(Packet.Codes.CONNECTION_LOST)
+                client.handlePacket(new Packet.PacketBuilder().code(Packet.Codes.CONNECTION_LOST)
                         .message("Connection lost on receive").build());
                 return;
             }

@@ -10,8 +10,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * Game panel, shows game board, fields and allows for user to move fields.
+ */
 public abstract class GamePanel extends JPanel {
 
+    /**
+     * Dimension of a single field, in pixels
+     */
     public final static Dimension fieldDim = new Dimension(28, 48);
     private final int diameter = Math.min(fieldDim.width, fieldDim.height);
     private final List<List<Field>> board = new ArrayList<>();
@@ -45,6 +51,12 @@ public abstract class GamePanel extends JPanel {
         }
     };
 
+    /**
+     * @param playerId        not null
+     * @param colorScheme     not null
+     * @param board           not null
+     * @param boardBackground not null
+     */
     GamePanel(int playerId, List<Color> colorScheme, List<List<Integer>> board, ImageIcon boardBackground) {
         this.playerId = playerId;
         this.colorScheme = colorScheme;
@@ -79,6 +91,11 @@ public abstract class GamePanel extends JPanel {
                 imageIcon.getIconHeight() - 2 * fieldDim.height));
     }
 
+    /**
+     * Sets status of mouse handles, false means that user will not be able to move any pawns
+     *
+     * @param active status
+     */
     public void setStatus(boolean active) {
         // reset selection of all fields
         board.forEach(row -> row.stream().filter(Objects::nonNull).forEach(f -> f.setSelected(false)));
@@ -96,6 +113,11 @@ public abstract class GamePanel extends JPanel {
         return new Dimension(boardBackground.getIconWidth(), boardBackground.getIconHeight());
     }
 
+    /**
+     * Update board information
+     *
+     * @param board not null
+     */
     void update(List<List<Integer>> board) {
         for (int y = 0; y < board.size(); y++) {
             for (int x = 0; x < board.get(0).size(); x++) {
@@ -106,6 +128,11 @@ public abstract class GamePanel extends JPanel {
         }
     }
 
+    /**
+     * Implementation of this method should handle sending packets to the serve
+     *
+     * @param packet packet to send
+     */
     public abstract void send(Packet packet);
 
     @Override
@@ -140,4 +167,32 @@ public abstract class GamePanel extends JPanel {
         }
     }
 
+    /**
+     * Helper class, in addition to field's state it also holds information about its selection.
+     * If a field is selected its border is bold
+     */
+    private static class Field {
+        private int state;
+        private boolean selected = false; //draw indication that client clicked on this field
+
+        public Field(int state) {
+            this.state = state;
+        }
+
+        public int getState() {
+            return state;
+        }
+
+        public void setState(int state) {
+            this.state = state;
+        }
+
+        public boolean isSelected() {
+            return selected;
+        }
+
+        public void setSelected(boolean selected) {
+            this.selected = selected;
+        }
+    }
 }

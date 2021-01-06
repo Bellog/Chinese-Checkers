@@ -12,6 +12,9 @@ import java.util.Objects;
 import java.util.Random;
 import java.util.concurrent.locks.ReentrantLock;
 
+/**
+ * Handles a single game, ensures correct turn order and players' actions
+ */
 public class GameHandler {
 
     private final AbstractGameMode game;
@@ -68,11 +71,22 @@ public class GameHandler {
         return game.getNumberOfPlayers();
     }
 
+    /**
+     * Starts the game and notifies all players
+     *
+     * @param fieldDims see {@link AbstractGameMode#getBoardBackground(Dimension)} for more information
+     */
     public void gameStart(List<Dimension> fieldDims) {
         for (int i = 0; i < game.getNumberOfPlayers(); i++)
             joinPlayer(i, fieldDims.get(i));
     }
 
+    /**
+     * Adds player to the game and sends {@link Packet.Codes#GAME_START} to that player
+     *
+     * @param player   which player to add
+     * @param fieldDim used to generate background image
+     */
     public void joinPlayer(int player, Dimension fieldDim) {
         server.sendToPlayer(player, new Packet.PacketBuilder()
                 .code(Packet.Codes.GAME_START).colorScheme(game.getColorScheme())
@@ -86,6 +100,12 @@ public class GameHandler {
             startTurn();
     }
 
+    /**
+     * See {@link Packet.Codes#PLAYER_UPDATE} for more information
+     *
+     * @param playerId generate player info for this player
+     * @return player info List
+     */
     private List<List<String>> generatePlayerInfo(int playerId) {
         List<List<String>> list = new ArrayList<>();
 
@@ -159,7 +179,14 @@ public class GameHandler {
         }
     }
 
-    public boolean move(Pos start, Pos end) {
+    /**
+     * Moves player's pawn from start to end
+     *
+     * @param start start position
+     * @param end   end position
+     * @return true if move was successful, false means no changes were made
+     */
+    private boolean move(Pos start, Pos end) {
         if (game.getFieldInfo(start.x, start.y) != currentPlayer) {
             server.sendToPlayer(currentPlayer, new Packet.PacketBuilder().code(Packet.Codes.INFO)
                     .message("You cannot move somebody else's pawn!").build());

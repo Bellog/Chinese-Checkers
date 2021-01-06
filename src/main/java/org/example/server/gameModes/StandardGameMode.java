@@ -44,8 +44,8 @@ class StandardGameMode extends BasicGameMode {
 
     @Override
     protected boolean isWinner(int player) {
-        for (int j = 0; j < winCondition.get(player).size(); j++) {
-            if (board.get(winCondition.get(player).get(j).y).get(winCondition.get(player).get(j).x) != player)
+        for (int i = 0; i < winCondition.get(player).size(); i++) {
+            if (board.get(winCondition.get(player).get(i).y).get(winCondition.get(player).get(i).x) != player)
                 return false;
         }
         return true;

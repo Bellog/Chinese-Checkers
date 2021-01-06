@@ -2,6 +2,9 @@ package org.example.server;
 
 import org.example.connection.Packet;
 
+/**
+ * Server connection interface used by Server class, removes dependency on connection type.
+ */
 public interface IServerConnection {
 
     /**
@@ -12,5 +15,10 @@ public interface IServerConnection {
      */
     void sendToPlayer(int playerId, Packet packet);
 
+    /**
+     * Connects to a client.
+     *
+     * @return true if a new player was added, false otherwise
+     */
     boolean addPlayer();
 }

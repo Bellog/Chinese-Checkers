@@ -15,6 +15,12 @@ import java.util.Objects;
 import java.util.Scanner;
 import java.util.concurrent.atomic.AtomicInteger;
 
+/**
+ * Server class that acts as a mediator between gameHandler and ServerConnection classes.
+ * <br> It also has logic around handling players' disconnections and reconnections.
+ * <br> This class can handle a singe game at once and is tied to it (server closes when game ends).
+ * <p></p> Main method inside uses cli to choose a game mode and starts server.
+ */
 public class Server implements IServer {
 
     private final IServerConnection conn;
@@ -22,6 +28,10 @@ public class Server implements IServer {
     private final String version;
     private final AtomicInteger disconnected = new AtomicInteger(0);
     private final List<Dimension> fieldDims = new ArrayList<>();
+
+    /**
+     * If game is running then app_info code's handling should be different, see handlePacket() method for more information.
+     */
     private volatile boolean gameStarted = false;
 
     public Server(AvailableGameModes.GameModes mode, int maxPlayers) {
@@ -44,9 +54,14 @@ public class Server implements IServer {
         gameHandler = new GameHandler(mode, maxPlayers, this);
     }
 
+    /**
+     * Starts server and asks for server configuration using cli.
+     *
+     * @param args ignored
+     */
     public static void main(String[] args) {
         var sc = new Scanner(System.in);
-        System.out.println("Please choose one of available game modes and player count (i.e. 0 4):");
+        System.out.println("Please choose one of available game modes:");
         for (int i = 0; i < AvailableGameModes.GameModes.values().length; i++) {
             System.out.println("\t" + i + ": " + AvailableGameModes.GameModes.values()[i].name());
         }
@@ -54,8 +69,12 @@ public class Server implements IServer {
         int players = 0;
         try {
             mode = AvailableGameModes.GameModes.values()[sc.nextInt()];
+            if (mode == null)
+                throw new Exception();
+            System.out.println("Please choose one of these player configuration for chosen game mode:\n\t" +
+                               AvailableGameModes.getPlayerNumberList(mode));
             players = sc.nextInt();
-            if (mode == null || players <= 0)
+            if (players <= 0)
                 throw new Exception();
         } catch (Exception e) {
             System.out.println("Incorrect input");
@@ -66,6 +85,9 @@ public class Server implements IServer {
         s.init();
     }
 
+    /**
+     * Initialized server and waits for all players, then starts the game
+     */
     public void init() {
         new Thread(() -> {
             int i = 0;
@@ -101,6 +123,11 @@ public class Server implements IServer {
         }).start();
     }
 
+    /**
+     * Adds player with supplied playerId, and notifies players if it was unsuccessful.
+     *
+     * @param player playerId
+     */
     private void addPlayer(int player) {
         new Thread(() -> {
             if (conn.addPlayer()) {
@@ -158,13 +185,21 @@ public class Server implements IServer {
         });
     }
 
+    /**
+     * Handles game resuming, should be used when a player reconnects
+     *
+     * @param player reconnected player's id
+     */
     private void resumeGame(int player) {
-        if (disconnected.get() > 0)
-            return;
-
         for (int i = 0; i < gameHandler.getNumberOfPlayers(); i++)
-            conn.sendToPlayer(i, new Packet.PacketBuilder().code(Packet.Codes.GAME_RESUME)
-                    .message("Player " + player + " reconnected, resuming the game.").build());
+            conn.sendToPlayer(i, new Packet.PacketBuilder().code(Packet.Codes.INFO)
+                    .message("Player " + player + " has reconnected.").build());
+
+        if (disconnected.get() == 0) {
+            for (int i = 0; i < gameHandler.getNumberOfPlayers(); i++)
+                conn.sendToPlayer(i, new Packet.PacketBuilder().code(Packet.Codes.GAME_RESUME)
+                        .message("All players have reconnected, resuming the game.").build());
+        }
     }
 
     @Override

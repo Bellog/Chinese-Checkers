@@ -9,12 +9,22 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
+/**
+ * Implementation of IServerInterface using java sockets.
+ * Uses PlayerConnection class for player handling
+ */
 public class ServerConnection implements IServerConnection {
 
     private final AtomicReference<ServerSocket> serverSocket = new AtomicReference<>();
     private final List<IPlayerConnection> players = new ArrayList<>();
     private final IServer server;
 
+    /**
+     * Instantiates this class
+     *
+     * @param server     server to communicate with
+     * @param maxPlayers max number of players to handle
+     */
     public ServerConnection(IServer server, int maxPlayers) {
         this.server = server;
 
@@ -40,11 +50,7 @@ public class ServerConnection implements IServerConnection {
             players.add(null);
     }
 
-    /**
-     * This method is blocking
-     *
-     * @return true if a new player was added, false otherwise
-     */
+    @Override
     public boolean addPlayer() {
         int i = players.indexOf(null);
         if (i < 0) {

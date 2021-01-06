@@ -60,7 +60,7 @@ class BasicGameMode extends AbstractGameMode {
                 for (int x = 0; x < board.get(y).size(); x++) {
                     if (board.get(y).get(x) != null && board.get(y).get(x) == player)
                         list.get(player).add(new Pos(board.get(0).size() - 1 - x, board.size() - 1 - y));
-                    // board is symmetrical, so that if (x,y) is player's base, then (maxX -x, maxY - y)
+                    // board is symmetrical, so that if (x,y) is player's base, then (maxX - x, maxY - y)
                     // is one of the fields that player needs to go to
                 }
             }
