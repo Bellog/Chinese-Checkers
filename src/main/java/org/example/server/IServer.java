@@ -6,5 +6,9 @@ public interface IServer {
 
     void handlePacket(int playerId, Packet packet);
 
+    void sendToPlayer(int playerId, Packet packet);
+
+    void stop();
+
     String getVersion();
 }

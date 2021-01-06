@@ -2,8 +2,10 @@ package org.example.client;
 
 import org.example.connection.Packet;
 
+import java.awt.*;
+
 public interface IClientConnection {
     void send(Packet packet);
 
-    boolean isInitialized();
+    void init(Dimension fieldDim) throws Exception;
 }

@@ -1,6 +1,7 @@
 package org.example.connection;
 
-import org.example.Pair;
+import org.example.Pos;
+import org.example.server.gameModes.AbstractGameMode;
 
 import javax.swing.*;
 import java.awt.*;
@@ -9,7 +10,7 @@ import java.util.List;
 
 /**
  * Packet class used to send data between server and clients, each code from Codes enum determines which fields are set.
- * When writing method that handles packets be wary of special codes, see {@link Packet.Codes} for more information.
+ * When writing method that handles packets should be wary of special codes, see {@link Packet.Codes} for more information.
  */
 public class Packet implements Serializable {
 
@@ -22,12 +23,18 @@ public class Packet implements Serializable {
     private final List<List<Integer>> board;
     private final List<List<String>> playerInfo;
     private final Integer playerId;
+    private final Dimension fieldDim;
     private final String message;
-    private final Pair startPos;
-    private final Pair endPos;
+    private final Pos startPos;
+    private final Pos endPos;
     private final List<Color> colors;
     private final ImageIcon image;
 
+    /**
+     * Private constructor ensures that this class can be instantiated only by using {@link Packet.PacketBuilder}.
+     *
+     * @param builder builder
+     */
     private Packet(PacketBuilder builder) {
         code = builder.code;
         board = builder.board;
@@ -38,16 +45,28 @@ public class Packet implements Serializable {
         endPos = builder.end;
         colors = builder.colorScheme;
         image = builder.image;
+        fieldDim = builder.fieldDim;
     }
 
     public Codes getCode() {
         return code;
     }
 
+    /**
+     * See {@link AbstractGameMode#getBoard()} for more information about this structure
+     *
+     * @return game board
+     */
     public List<List<Integer>> getBoard() {
         return board;
     }
 
+    /**
+     * player information where each row is in format: Player [i] [(You)] | [position].
+     * <br>First row is e header: players | pos
+     *
+     * @return player information
+     */
     public List<List<String>> getPlayerInfo() {
         return playerInfo;
     }
@@ -60,49 +79,121 @@ public class Packet implements Serializable {
         return playerId;
     }
 
-    public Pair getStartPos() {
+    public Pos getStartPos() {
         return startPos;
     }
 
-    public Pair getEndPos() {
+    public Pos getEndPos() {
         return endPos;
     }
 
+    /**
+     * See {@link AbstractGameMode#getColorScheme()} for more information about this structure
+     *
+     * @return color scheme list
+     */
     public List<Color> getColorScheme() {
         return colors;
     }
 
+    /**
+     * See {@link AbstractGameMode#getBoardBackground(Dimension)} for more information about this structure
+     *
+     * @return board background image
+     */
     public ImageIcon getImage() {
         return image;
     }
 
     /**
-     * List of possible code Packet class can be used to send
+     * Single field dimension, see {@link Codes#APP_INFO} for more information
+     *
+     * @return field dimension
+     */
+    public Dimension getFieldDim() {
+        return fieldDim;
+    }
+
+    /**
+     * List of possible code Packet class can be used to send.
+     * Each code can also have a message.
+     * If a code has a field required it must not be null.
      */
     public enum Codes implements Serializable {
+        /**
+         * Packet with no special functionality.
+         */
         INFO,
+        /**
+         * Used by client to send information about fieldDim
+         */
+        APP_INFO,
+        /**
+         * Updates playerInfo
+         * <p></p> Requires fields:
+         * <ul>
+         *     <li>message</li>
+         * </ul>
+         */
         PLAYER_UPDATE,
+        /**
+         * updates board
+         * <p></p> Requires fields:
+         * <ul>
+         *     <li>board</li>
+         * </ul>
+         */
         BOARD_UPDATE,
+        /**
+         * Server sends this to the the client that their turn starts
+         */
         TURN_START,
+        /**
+         * Client sends this to move a pawn from startPos to endPos
+         * <p></p> Requires fields:
+         * <ul>
+         *     <li>startPos</li>
+         *     <li>startPos</li>
+         * </ul>
+         */
         TURN_MOVE,
+        /**
+         * Client sends this if it wants to end their turn
+         */
         TURN_END,
-        ACTION_SUCCESS,
-        WRONG_ACTION,
-        ACTION_FAILURE,
-        CANNOT_MOVE,
-        OPPONENT_TURN,
-        OPPONENT_MOVE,
+        /**
+         * Client sends this if it wants to reset their turn
+         */
         TURN_ROLLBACK,
-        GAME_START,     //board, playerId, colorScheme
+        /**
+         * Server sends this to tell client to start the game
+         * <p></p> Requires fields:
+         * <ul>
+         *     <li>board</li>
+         *     <li>colorScheme</li>
+         *     <li>playerId</li>
+         *     <li>image</li>
+         * </ul>
+         */
+        GAME_START,
+        /**
+         * Server sends this to tell client that the game has ended
+         */
         GAME_END,
+        /**
+         * Server sends this to tell client that the game has been paused
+         */
         GAME_PAUSE,
+        /**
+         * Server sends this to tell client that the game has been resumed
+         */
         GAME_RESUME,
         /**
          * Special packet, used internally to notify that caller has lost connection, i.e.
-         * IServeConnection can send this packet to IServer using provided method
+         * IServeConnection can send this packet to IServer when it loses server connection
          * <p></p> Requires fields:
          * <ul>
-         *     <li>message - connection loss information</li>
+         *     <li>message</li>
          * </ul>
          */
         CONNECTION_LOST;
@@ -114,14 +205,19 @@ public class Packet implements Serializable {
         private static final long serialVersionUID = 1002L;
     }
 
+    /**
+     * Builder class for Packet, refer to {@link Packet.Codes} to see which fields you need to set.
+     * Fields not set will be null.
+     */
     public static class PacketBuilder {
         private Codes code = null;
         private List<List<Integer>> board = null;
         private List<List<String>> playerInfo = null;
         private String message = null;
         private Integer playerId = null;
-        private Pair start = null;
-        private Pair end = null;
+        private Dimension fieldDim = null;
+        private Pos start = null;
+        private Pos end = null;
         private List<Color> colorScheme = null;
         private ImageIcon image;
 
@@ -132,6 +228,11 @@ public class Packet implements Serializable {
 
         public PacketBuilder playerId(int playerId) {
             this.playerId = playerId;
+            return this;
+        }
+
+        public PacketBuilder fieldDim(Dimension fieldDim) {
+            this.fieldDim = fieldDim;
             return this;
         }
 
@@ -150,12 +251,12 @@ public class Packet implements Serializable {
             return this;
         }
 
-        public PacketBuilder start(Pair start) {
+        public PacketBuilder start(Pos start) {
             this.start = start;
             return this;
         }
 
-        public PacketBuilder end(Pair end) {
+        public PacketBuilder end(Pos end) {
             this.end = end;
             return this;
         }

@@ -6,8 +6,13 @@ import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
 import org.example.connection.Packet;
 import org.example.server.gameModes.AvailableGameModes;
 
+import java.awt.*;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Scanner;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class Server implements IServer {
@@ -16,8 +21,10 @@ public class Server implements IServer {
     private final GameHandler gameHandler;
     private final String version;
     private final AtomicInteger disconnected = new AtomicInteger(0);
+    private final List<Dimension> fieldDims = new ArrayList<>();
+    private volatile boolean gameStarted = false;
 
-    public Server() {
+    public Server(AvailableGameModes.GameModes mode, int maxPlayers) {
         String version = null;
 
         try {
@@ -32,39 +39,66 @@ public class Server implements IServer {
         }
         this.version = version;
 
-        int maxPlayers = 2;
-
-        //TODO get maxPlayer from cli
         conn = new ServerConnection(this, maxPlayers);
 
-        int i = 0;
-        while (i < maxPlayers) {
-            if (conn.addPlayer()) {
-                i++;
-            }
-        }
-
-        //TODO get game mode and maxPlayer from cli
-        var gameMode = AvailableGameModes.getGameMode(AvailableGameModes.GameModes.STANDARD, maxPlayers);
-
-        if (gameMode == null) {
-            System.out.println("Cannot instantiate this game mode");
-            System.exit(1);
-        }
-
-        gameHandler = new GameHandler(gameMode) {
-            @Override
-            protected void sendToPlayer(int player, Packet packet) {
-                conn.sendToPlayer(player, packet);
-            }
-        };
-
-        System.out.println("Found all players");
-        gameHandler.gameStart();
+        gameHandler = new GameHandler(mode, maxPlayers, this);
     }
 
     public static void main(String[] args) {
-        new Server();
+        var sc = new Scanner(System.in);
+        System.out.println("Please choose one of available game modes and player count (i.e. 0 4):");
+        for (int i = 0; i < AvailableGameModes.GameModes.values().length; i++) {
+            System.out.println("\t" + i + ": " + AvailableGameModes.GameModes.values()[i].name());
+        }
+        AvailableGameModes.GameModes mode = null;
+        int players = 0;
+        try {
+            mode = AvailableGameModes.GameModes.values()[sc.nextInt()];
+            players = sc.nextInt();
+            if (mode == null || players <= 0)
+                throw new Exception();
+        } catch (Exception e) {
+            System.out.println("Incorrect input");
+            System.exit(1);
+        }
+
+        var s = new Server(mode, players);
+        s.init();
+    }
+
+    public void init() {
+        new Thread(() -> {
+            int i = 0;
+            while (i < gameHandler.getNumberOfPlayers()) {
+                if (conn.addPlayer()) {
+                    fieldDims.add(null);
+                    i++;
+                }
+            }
+
+            System.out.println("Found all players");
+
+            int wait = 0;
+            // waits 50ms then checks if all players have sent their fieldDims
+            while (wait < 100) {
+                try {
+                    Thread.sleep(50);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                if (fieldDims.stream().anyMatch(Objects::isNull)) {
+                    wait++;
+                } else
+                    break;
+            }
+            if (wait == 100) {
+                System.out.println("Could not get data from client, closing the program");
+                System.exit(1);
+            }
+
+            gameHandler.gameStart(fieldDims);
+            gameStarted = true;
+        }).start();
     }
 
     private void addPlayer(int player) {
@@ -82,19 +116,46 @@ public class Server implements IServer {
 
     @Override
     public synchronized void handlePacket(int player, Packet packet) {
-        if (packet.getCode() == Packet.Codes.CONNECTION_LOST) {
-            System.out.println("Lost connection to player " + player + ", pausing the game");
-            disconnected.incrementAndGet();
-            gameHandler.handleInput(player, new Packet.PacketBuilder().code(Packet.Codes.TURN_ROLLBACK).build());
-            for (int i = 0; i < gameHandler.getNumberOfPlayers(); i++)
-                conn.sendToPlayer(i, new Packet.PacketBuilder().code(Packet.Codes.GAME_RESUME)
-                        .message("Player" + player + " disconnected, pausing the game.").build());
-            addPlayer(player);
-            return;
+        System.out.println(player + " : " + packet.getCode().name());
+        switch (packet.getCode()) {
+            case CONNECTION_LOST -> {
+                System.out.println("Lost connection to player " + player + ", pausing the game");
+                disconnected.incrementAndGet();
+                gameHandler.handleInput(player, new Packet.PacketBuilder().code(Packet.Codes.TURN_ROLLBACK).build());
+                for (int i = 0; i < gameHandler.getNumberOfPlayers(); i++)
+                    conn.sendToPlayer(i, new Packet.PacketBuilder().code(Packet.Codes.GAME_RESUME)
+                            .message("Player " + player + " disconnected, pausing the game.").build());
+                addPlayer(player);
+            }
+            case APP_INFO -> {
+                if (gameStarted)
+                    gameHandler.joinPlayer(player, packet.getFieldDim());
+                else
+                    fieldDims.set(player, packet.getFieldDim());
+            }
+            default -> {
+                if (disconnected.get() == 0)
+                    gameHandler.handleInput(player, packet);
+            }
         }
+    }
 
-        if (disconnected.get() == 0)
-            gameHandler.handleInput(player, packet);
+    @Override
+    public void sendToPlayer(int playerId, Packet packet) {
+        conn.sendToPlayer(playerId, packet);
+    }
+
+    @Override
+    public void stop() {
+        System.out.println("Stopping the server");
+        new Thread(() -> {
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            System.exit(0);
+        });
     }
 
     private void resumeGame(int player) {
@@ -103,7 +164,7 @@ public class Server implements IServer {
 
         for (int i = 0; i < gameHandler.getNumberOfPlayers(); i++)
             conn.sendToPlayer(i, new Packet.PacketBuilder().code(Packet.Codes.GAME_RESUME)
-                    .message("Player" + player + " reconnected, resuming the game.").build());
+                    .message("Player " + player + " reconnected, resuming the game.").build());
     }
 
     @Override

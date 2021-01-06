@@ -9,7 +9,6 @@ public interface IServerConnection {
      *
      * @param playerId sends packet to this player
      * @param packet   packet to send
-     * @throws Exception if packet cannot be sent, reason is specified in the exception's message
      */
     void sendToPlayer(int playerId, Packet packet);
 

@@ -1,6 +1,6 @@
 package org.example.client;
 
-import org.example.Pair;
+import org.example.Pos;
 import org.example.connection.Packet;
 
 import javax.swing.*;
@@ -12,30 +12,31 @@ import java.util.Objects;
 
 public abstract class GamePanel extends JPanel {
 
-    private final static Dimension fieldDim = new Dimension(28, 48);
+    public final static Dimension fieldDim = new Dimension(28, 48);
     private final int diameter = Math.min(fieldDim.width, fieldDim.height);
     private final List<List<Field>> board = new ArrayList<>();
     private final int playerId;
     private final List<Color> colorScheme;
     private final ImageIcon boardBackground;
     // all fields are offset by a single field in x axis, see cropImage method
-    private final MouseHandler handler = new MouseHandler(fieldDim, diameter, new Pair(fieldDim.width, 0)) {
+    private final MouseHandler handler = new MouseHandler(fieldDim, diameter, new Pos(fieldDim.width, 0)) {
         @Override
-        protected void setFieldSelection(Pair pos, boolean selected) {
-            board.get(pos.second).get(pos.first).setSelected(selected);
+        protected void setFieldSelection(Pos pos, boolean selected) {
+            if (board.get(pos.y).get(pos.x) != null)
+                board.get(pos.y).get(pos.x).setSelected(selected);
         }
 
         @Override
-        protected boolean startCheck(Pair pos) {
-            if (board.get(pos.second).get(pos.first) != null)
-                return board.get(pos.second).get(pos.first).getState() == playerId;
+        protected boolean startCheck(Pos pos) {
+            if (board.get(pos.y).get(pos.x) != null)
+                return board.get(pos.y).get(pos.x).getState() == playerId;
             else
                 return false;
         }
 
         @Override
-        protected boolean endCheck(Pair pos) {
-            return board.get(pos.second).get(pos.first) != null;
+        protected boolean endCheck(Pos pos) {
+            return board.get(pos.y).get(pos.x) != null;
         }
 
         @Override

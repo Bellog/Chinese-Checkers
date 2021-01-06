@@ -7,12 +7,16 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 
 public abstract class PlayerConnection implements IPlayerConnection {
     private final AtomicReference<ObjectInputStream> input = new AtomicReference<>();
     private final AtomicReference<ObjectOutputStream> output = new AtomicReference<>();
+    private final BlockingQueue<Packet> packetQueue = new ArrayBlockingQueue<>(10, true);
     private final Socket socket;
     private final String version;
     private final ReentrantLock LOCK = new ReentrantLock();
@@ -57,8 +61,9 @@ public abstract class PlayerConnection implements IPlayerConnection {
             return false;
         }
 
-        new Thread(this::handleInput).start();
         isActive = true;
+        new Thread(this::handleOutput).start();
+        new Thread(this::handleInput).start();
         return true;
     }
 
@@ -78,26 +83,34 @@ public abstract class PlayerConnection implements IPlayerConnection {
         }
     }
 
+    private void handleOutput() {
+        while (!socket.isClosed() && socket.isConnected() && isActive) {
+            try {
+                LOCK.lock();
+                Packet p = packetQueue.poll(2, TimeUnit.SECONDS);
+                if (p == null)
+                    continue;
+                output.get().reset();
+                output.get().writeObject(p);
+                output.get().flush();
+                LOCK.unlock();
+            } catch (IOException e) {
+                LOCK.unlock();
+                if (isActive) {
+                    isActive = false;
+                    handlePacket(new Packet.PacketBuilder()
+                            .code(Packet.Codes.CONNECTION_LOST).build());
+                }
+            } catch (InterruptedException ignored) {
+
+            }
+        }
+    }
+
     protected abstract void handlePacket(Packet packet);
 
     @Override
     public synchronized void send(Packet packet) {
-        if (isActive)
-            new Thread(() -> {
-                try {
-                    LOCK.lock();
-                    output.get().reset();
-                    output.get().writeObject(packet);
-                    output.get().flush();
-                    LOCK.unlock();
-                } catch (IOException e) {
-                    LOCK.unlock();
-                    if (isActive) {
-                        isActive = false;
-                        handlePacket(new Packet.PacketBuilder()
-                                .code(Packet.Codes.CONNECTION_LOST).build());
-                    }
-                }
-            }).start();
+        packetQueue.add(packet);
     }
 }

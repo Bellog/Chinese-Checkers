@@ -1,6 +1,6 @@
 package org.example.server.gameModes;
 
-import org.example.Pair;
+import org.example.Pos;
 
 import javax.swing.*;
 import java.awt.*;
@@ -15,21 +15,32 @@ import java.util.Map;
 public abstract class AbstractGameMode {
     protected final List<List<Integer>> board;
     protected final int maxPlayers;
-    protected final List<List<Integer>> defaultBoard = getDefaultBoard();
-    protected final Map<Integer, Map<Integer, Integer>> playerBases = getPlayerMap();
-    protected final List<List<Pair>> winCondition = getWinCondition();
+    protected final List<List<Integer>> defaultBoard;
+    protected final Map<Integer, Map<Integer, Integer>> playerMap;
+    protected final List<List<Pos>> winCondition;
     protected final List<Color> colorScheme;
-    public List<Pair> tempMoveList = new ArrayList<>();
+    protected final List<Integer> winners;
+    public List<Pos> tempMoveList = new ArrayList<>();
 
     protected AbstractGameMode(int maxPlayers, List<Color> colorScheme) {
+        //order of some instantiation of these fields may be important
+        // Refer to descriptions of individual methods when you add or rearrange these assignments
         this.maxPlayers = maxPlayers;
         this.colorScheme = colorScheme;
-        this.board = new ArrayList<>();
+        winners = new ArrayList<>();
+        defaultBoard = getDefaultBoard();
+        playerMap = getPlayerMap();
+        board = getStartingBoard();
+        winCondition = getWinCondition();
+        for (int i = 0; i < maxPlayers; i++)
+            winners.add(null);
     }
 
     protected abstract Map<Integer, Map<Integer, Integer>> getPlayerMap();
 
-    protected abstract List<List<Pair>> getWinCondition();
+    protected abstract List<List<Pos>> getWinCondition();
+
+    protected abstract List<List<Integer>> getStartingBoard();
 
     protected abstract List<List<Integer>> getDefaultBoard();
 
@@ -49,7 +60,7 @@ public abstract class AbstractGameMode {
      * @param pos position (x, y) of a field to check its neighbors
      * @return Returns list of (nullable )neighbors of a field at pos position
      */
-    protected abstract List<Pair> getNeighbors(Pair pos);
+    protected abstract List<Pos> getNeighbors(Pos pos);
 
     /**
      * Helper method for getNeighbors(Pair) method.
@@ -59,12 +70,12 @@ public abstract class AbstractGameMode {
      * @param yOffset checks neighbor at pos.second + xOffset
      * @return Returns new Pair with neighbor position or null if neighbors is null
      */
-    protected final Pair neighborCheck(Pair pos, int xOffset, int yOffset) {
+    protected final Pos neighborCheck(Pos pos, int xOffset, int yOffset) {
         // field at pos + offset is withing bounds and is not null
-        if (pos.first + xOffset < defaultBoard.get(0).size() && pos.first + xOffset >= 0 &&
-            pos.second + yOffset < board.size() && pos.second + yOffset >= 0 &&
-            board.get(pos.second + yOffset).get(pos.first + xOffset) != null)
-            return new Pair(pos.first + xOffset, pos.second + yOffset);
+        if (pos.x + xOffset < defaultBoard.get(0).size() && pos.x + xOffset >= 0 &&
+            pos.y + yOffset < board.size() && pos.y + yOffset >= 0 &&
+            board.get(pos.y + yOffset).get(pos.x + xOffset) != null)
+            return new Pos(pos.x + xOffset, pos.y + yOffset);
         else
             return null;
     }
@@ -77,7 +88,7 @@ public abstract class AbstractGameMode {
      * @param pos position of a pawn to check
      * @return List of field where player can move, null if there is no pawn at specified position
      */
-    protected abstract List<Pair> getPossibleMoves(Pair pos);
+    protected abstract List<Pos> getPossibleMoves(Pos pos);
 
     /**
      * Returns game board, where each field is a Pair of (state, type)
@@ -97,7 +108,9 @@ public abstract class AbstractGameMode {
         return background.background;
     }
 
-    abstract public int getNumberOfPlayers();
+    public int getNumberOfPlayers() {
+        return maxPlayers;
+    }
 
     /**
      * Used to access information about state and type of fields on board.
@@ -115,7 +128,7 @@ public abstract class AbstractGameMode {
      *
      * @return true if move is successful, false if not
      */
-    abstract public boolean move(Pair p0, Pair p1);
+    abstract public boolean move(Pos p0, Pos p1);
 
     public void endTurn() {
         tempMoveList.clear();
@@ -126,15 +139,15 @@ public abstract class AbstractGameMode {
             return;
         var start = tempMoveList.get(0);
         var end = tempMoveList.get(tempMoveList.size() - 1);
-        int swap = board.get(start.second).get(start.first);
-        board.get(start.second).set(start.first, board.get(end.second).get(end.first));
-        board.get(end.second).set(end.first, swap);
+        int swap = board.get(start.y).get(start.x);
+        board.get(start.y).set(start.x, board.get(end.y).get(end.x));
+        board.get(end.y).set(end.x, swap);
         tempMoveList = new ArrayList<>(); //clear tempMoveList
     }
 
-    abstract public boolean canMove(Pair pos);
+    abstract public boolean canMove(Pos pos);
 
-    abstract public int winnerId();
+    abstract public List<Integer> getWinners();
 
     /**
      * Returns list in certain order: no player, player0, player1, etc.
@@ -179,7 +192,7 @@ public abstract class AbstractGameMode {
                 for (int x = 0; x < getDefaultBoard().get(0).size(); x++) {
                     if (getDefaultBoard().get(y).get(x) == null)
                         continue;
-                    drawBackgroundFieldBase(new Pair(x, y), g, fieldDim);
+                    drawBackgroundFieldBase(new Pos(x, y), g, fieldDim);
                 }
             }
 
@@ -191,13 +204,13 @@ public abstract class AbstractGameMode {
                 for (int x = 0; x < defaultBoard.get(0).size(); x++) {
                     if (defaultBoard.get(y).get(x) == null)
                         continue;
-                    var neighs = getNeighbors(new Pair(x, y));
-                    for (Pair p : neighs) {
+                    var neighs = getNeighbors(new Pos(x, y));
+                    for (Pos p : neighs) {
                         if (p != null)
                             g.drawLine((x + 1) * fieldDim.width + fieldDim.width / 2,
                                     (y + 1) * fieldDim.height + fieldDim.height / 2,
-                                    (p.first + 1) * fieldDim.width + fieldDim.width / 2,
-                                    (p.second + 1) * fieldDim.height + fieldDim.height / 2);
+                                    (p.x + 1) * fieldDim.width + fieldDim.width / 2,
+                                    (p.y + 1) * fieldDim.height + fieldDim.height / 2);
                     }
                 }
             }
@@ -210,9 +223,9 @@ public abstract class AbstractGameMode {
          * @param g        graphics to draw on
          * @param fieldDim field dimension to calculate positions
          */
-        private void drawBackgroundFieldBase(Pair pos, Graphics2D g, Dimension fieldDim) {
-            if (defaultBoard.get(pos.second).get(pos.first) >= 0) { // field is a base
-                List<Pair> neighs = getNeighbors(pos);
+        private void drawBackgroundFieldBase(Pos pos, Graphics2D g, Dimension fieldDim) {
+            if (defaultBoard.get(pos.y).get(pos.x) >= 0) { // field is a base
+                List<Pos> neighs = getNeighbors(pos);
                 for (int i = 0; i < neighs.size() - 1; i++) {
                     drawBackgroundFieldBaseTile(pos, neighs.get(i), neighs.get(i + 1), g, fieldDim);
                 }
@@ -230,18 +243,18 @@ public abstract class AbstractGameMode {
          * @param g        graphics to draw on
          * @param fieldDim field dimension to calculate positions
          */
-        private void drawBackgroundFieldBaseTile(Pair pos, Pair neigh0, Pair neigh1, Graphics g, Dimension fieldDim) {
+        private void drawBackgroundFieldBaseTile(Pos pos, Pos neigh0, Pos neigh1, Graphics g, Dimension fieldDim) {
             if (neigh0 == null || neigh1 == null)
                 return;
 
-            int[] xs = {(pos.first + 1) * fieldDim.width + fieldDim.width / 2,
-                    (neigh0.first + 1) * fieldDim.width + fieldDim.width / 2,
-                    (neigh1.first + 1) * fieldDim.width + fieldDim.width / 2};
-            int[] ys = {(pos.second + 1) * fieldDim.height + fieldDim.height / 2,
-                    (neigh0.second + 1) * fieldDim.height + fieldDim.height / 2,
-                    (neigh1.second + 1) * fieldDim.height + fieldDim.height / 2};
+            int[] xs = {(pos.x + 1) * fieldDim.width + fieldDim.width / 2,
+                    (neigh0.x + 1) * fieldDim.width + fieldDim.width / 2,
+                    (neigh1.x + 1) * fieldDim.width + fieldDim.width / 2};
+            int[] ys = {(pos.y + 1) * fieldDim.height + fieldDim.height / 2,
+                    (neigh0.y + 1) * fieldDim.height + fieldDim.height / 2,
+                    (neigh1.y + 1) * fieldDim.height + fieldDim.height / 2};
 
-            g.setColor(colorScheme.get(defaultBoard.get(pos.second).get(pos.first)));
+            g.setColor(colorScheme.get(defaultBoard.get(pos.y).get(pos.x)));
             g.fillPolygon(xs, ys, 3);
         }
     }

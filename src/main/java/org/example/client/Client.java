@@ -12,12 +12,19 @@ import java.util.List;
 public class Client implements IClient {
 
     private final IClientConnection conn;
+    private volatile boolean status = true;
     private AppFrame frame;
     private GamePanel gamePanel;
     private SidePanel sidePanel;
 
     public Client() {
         conn = new ClientConnection(this);
+        try {
+            conn.init(GamePanel.fieldDim);
+        } catch (Exception e) {
+            System.out.println("Failed to initialize connection, closing program");
+            System.exit(1);
+        }
     }
 
     public static void main(String[] args) {
@@ -33,16 +40,14 @@ public class Client implements IClient {
         gamePanel = new GamePanel(playerId, colorScheme, board, boardBackground) {
             @Override
             public void send(Packet packet) {
-                if (conn != null)
-                    conn.send(packet);
+                conn.send(packet);
             }
         };
         sidePanel = new SidePanel(playerInfo, colorScheme, gamePanel.getPreferredSize().height) {
 
             @Override
             public void send(Packet packet) {
-                if (conn != null)
-                    conn.send(packet);
+                conn.send(packet);
             }
         };
 
@@ -65,6 +70,15 @@ public class Client implements IClient {
             sidePanel.setStatus(status);
     }
 
+    private void log(String message) {
+        if (message != null) {
+            if (sidePanel != null)
+                sidePanel.updateLogs(message);
+            else
+                System.out.println(message);
+        }
+    }
+
     @Override
     public synchronized void receive(Packet packet) {
         switch (packet.getCode()) {
@@ -72,6 +86,10 @@ public class Client implements IClient {
                     packet.getBoard(), packet.getImage(), packet.getPlayerInfo());
             case TURN_START, GAME_RESUME -> setPanelStatus(true);
             case TURN_END, GAME_PAUSE, CONNECTION_LOST -> setPanelStatus(false);
+            case GAME_END -> {
+                status = false;
+                log(packet.getMessage());
+            }
             case BOARD_UPDATE -> {
                 if (gamePanel != null)
                     gamePanel.update(packet.getBoard());
@@ -82,11 +100,7 @@ public class Client implements IClient {
             }
         }
 
-        if (packet.getMessage() != null) {
-            if (sidePanel != null)
-                sidePanel.updateLogs(packet.getMessage());
-            else
-                System.out.println(packet.getMessage());
-        }
+        if (status)
+            log(packet.getMessage());
     }
 }
