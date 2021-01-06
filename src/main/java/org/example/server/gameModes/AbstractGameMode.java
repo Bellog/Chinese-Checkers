@@ -15,7 +15,8 @@ public abstract class AbstractGameMode {
     protected final List<List<Integer>> board;
     protected final int maxPlayers;
     protected final List<List<Integer>> defaultBoard = getDefaultBoard();
-    protected final Map<Integer, Map<Integer, Integer>> playerBases;
+    protected final Map<Integer, Map<Integer, Integer>> playerBases = getPlayerBases();
+    protected final List<List<Pair>> winCondition = getWinCondition();
     public List<Pair> tempMoveList = new ArrayList<>();
 
     /**
@@ -27,14 +28,13 @@ public abstract class AbstractGameMode {
         this.maxPlayers = maxPlayers;
         //this.possiblePlayerNumbers = new ArrayList<>();
         this.board = new ArrayList<>();
-        this.playerBases = new TreeMap<>();
     }
 
     //protected abstract void setPlayerNumbers();
 
-    protected abstract void setPlayerBases();
+    protected abstract Map<Integer, Map<Integer, Integer>> getPlayerBases();
 
-    //protected static List<Integer> getPlayerNumbers() {return new ArrayList<>();}
+    protected abstract List<List<Pair>> getWinCondition();
 
     protected abstract List<List<Integer>> getDefaultBoard();
 
@@ -82,7 +82,7 @@ public abstract class AbstractGameMode {
      * @param pos position of a pawn to check
      * @return List of field where player can move, null if there is no pawn at specified position
      */
-    public abstract List<Pair> getPossibleMoves(Pair pos);
+    protected abstract List<Pair> getPossibleMoves(Pair pos);
 
     /**
      * Returns game board, where each field is a Pair of (state, type)
@@ -102,7 +102,6 @@ public abstract class AbstractGameMode {
      *
      * @return winner's id, -1 if there is no winner
      */
-    public abstract int winnerId();
 
     public final ImageIcon getBoardBackground(Dimension fieldDim) {
         var background = new BoardBackgroundGenerator(fieldDim);
@@ -139,7 +138,9 @@ public abstract class AbstractGameMode {
         Collections.swap(tempMoveList, tempMoveList.size() - 1, 0);
     }
 
-    abstract public boolean hasWinner();
+    abstract public boolean canMove();
+
+    abstract public int winnerId();
 
     /**
      * Returns list in certain order: no player, player0, player1, etc.

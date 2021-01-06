@@ -9,7 +9,7 @@ public class AvailableGameModes {
 
     static {
         maxPlayersMap = new TreeMap<>();
-        // Should put the list from a class whenever one is created (see enum GameModes)
+        // Should put the list for a class whenever one is created (see enum GameModes)
         maxPlayersMap.put(GameModes.BASIC, new ArrayList<>() {{
             add(2);
             add(3);

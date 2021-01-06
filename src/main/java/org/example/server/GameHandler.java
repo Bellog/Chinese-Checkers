@@ -112,20 +112,24 @@ public abstract class GameHandler {
                     .message("You cannot move somebody else's pawn!").build());
             return false;
         }
-
-        if (game.move(start, end)) {
-            for (int i = 0; i < game.getNumberOfPlayers(); i++)
-                if (i != currentPlayer)
-                    sendToPlayer(i, new Packet.PacketBuilder()
-                            .code(Packet.Codes.OPPONENT_MOVE).board(game.getBoard())
-                            .message("Player " + (currentPlayer + 1) + " moved").build());
-            return true;
+        if (game.canMove(start)) {
+            if (game.move(start, end)) {
+                for (int i = 0; i < game.getNumberOfPlayers(); i++)
+                    if (i != currentPlayer)
+                        sendToPlayer(i, new Packet.PacketBuilder()
+                                .code(Packet.Codes.OPPONENT_MOVE).board(game.getBoard())
+                                .message("Player " + (currentPlayer + 1) + " moved").build());
+                return true;
+            } else {
+                sendToPlayer(currentPlayer, new Packet.PacketBuilder()
+                        .code(Packet.Codes.ACTION_FAILURE).message("This field is already set").build());
+                return false;
+            }
         } else {
-            sendToPlayer(currentPlayer, new Packet.PacketBuilder()
-                    .code(Packet.Codes.ACTION_FAILURE).message("This field is already set").build());
+            sendToPlayer(currentPlayer, new Packet.PacketBuilder().code(Packet.Codes.INFO)
+                    .message("You cannot move from this field").build());
             return false;
         }
-
     }
 
     protected abstract void sendToPlayer(int player, Packet packet);

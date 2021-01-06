@@ -89,6 +89,7 @@ public class Packet implements Serializable {
         ACTION_SUCCESS,
         WRONG_ACTION,
         ACTION_FAILURE,
+        CANNOT_MOVE,
         OPPONENT_TURN,
         OPPONENT_MOVE,
         TURN_ROLLBACK,

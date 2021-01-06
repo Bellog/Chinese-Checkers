@@ -5,6 +5,7 @@ import org.example.Pair;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
@@ -20,7 +21,6 @@ class BasicGameMode extends AbstractGameMode {
 
     public BasicGameMode(int maxPlayers) {
         super(maxPlayers);
-        setPlayerBases();
 
         for (int y = 0; y < defaultBoard.size(); y++) {
             board.add(new ArrayList<>());
@@ -60,8 +60,9 @@ class BasicGameMode extends AbstractGameMode {
     /**
      * Determines which starting fields belong to which player, according to number of players
      */
-    protected void setPlayerBases() {
-        playerBases.put(2, new TreeMap<>() {{
+    protected Map<Integer, Map<Integer, Integer>> getPlayerBases() {
+        Map<Integer, Map<Integer, Integer>> map = new TreeMap<>();
+        map.put(2, new TreeMap<>() {{
             put(0, 0);
             put(1, -1);
             put(2, -1);
@@ -69,7 +70,7 @@ class BasicGameMode extends AbstractGameMode {
             put(4, -1);
             put(5, -1);
         }});
-        playerBases.put(3, new TreeMap<>() {{
+        map.put(3, new TreeMap<>() {{
             put(0, 0);
             put(1, 1);
             put(2, -1);
@@ -77,13 +78,28 @@ class BasicGameMode extends AbstractGameMode {
             put(4, -1);
             put(5, 2);
         }});
-        playerBases.put(4, new TreeMap<>() {{
+        map.put(4, new TreeMap<>() {{
             put(0, -1); put(1, 0); put(2, 1); put(3, -1); put(4, 2); put(5, 3);
         }});
-        playerBases.put(6, new TreeMap<>()
+        map.put(6, new TreeMap<>()
         {{
             put(0, 0); put(1, 1); put(2, 2); put(3, 3); put(4, 4); put(5, 5);
         }});
+        return map;
+    }
+
+    protected List<List<Pair>> getWinCondition() {
+        List<List<Pair>> list = new ArrayList<>();
+        for (int i = 0; i < maxPlayers; i++) {
+            list.add(new ArrayList<>());
+            for (int j = 0; j < defaultBoard.size(); j++) {
+                for (int k = 0; k < defaultBoard.get(j).size(); k++) {
+                    if (defaultBoard.get(j).get(k) == (i+3)%6)
+                        list.get(i).add(new Pair(k, j));
+                }
+            }
+        }
+        return list;
     }
 
     @Override
@@ -101,7 +117,7 @@ class BasicGameMode extends AbstractGameMode {
     }
 
     @Override
-    public List<Pair> getPossibleMoves(Pair pos) {
+    protected List<Pair> getPossibleMoves(Pair pos) {
         // if field state is -1 and is a neighbor then player can move there
         return getNeighbors(pos).stream()
                 .filter(p -> p != null && board.get(p.second).get(p.first) == -1)
@@ -110,7 +126,19 @@ class BasicGameMode extends AbstractGameMode {
 
     @Override
     public int winnerId() {
+        for (int i = 0; i < maxPlayers; i++) {
+            if (isWinner(i))
+                return i;
+        }
         return -1;
+    }
+
+    protected boolean isWinner (int i) {
+        for (int j = 0; j < winCondition.get(i).size(); j++) {
+            if (board.get(winCondition.get(i).get(j).second).get(winCondition.get(i).get(j).first) != i)
+                return false;
+        }
+        return true;
     }
 
     /**
@@ -181,8 +209,8 @@ class BasicGameMode extends AbstractGameMode {
     }
 
     @Override
-    public boolean hasWinner() {
-        return false;
+    public boolean canMove() {
+        return true;
     }
 
     @Override
