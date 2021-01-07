@@ -36,17 +36,40 @@ public abstract class AbstractGameMode {
             winners.add(null);
     }
 
+    /**
+     * Used to connect players' identifications with their starting positions.
+     * <br>Should not be initiated manually, but implemented by playable game modes.
+     * @return Associations of player ids and number representing their bases, keyed number of players
+     */
     protected abstract Map<Integer, Map<Integer, Integer>> getPlayerMap();
 
+    /**
+     * Allows to check if any player won, with minimal number of comparisons.
+     * <br>Should not be initiated manually, but implemented by playable game modes.
+     * @return List of winning areas for each player
+     */
     protected abstract List<List<Pos>> getWinCondition();
 
+    /**
+     * This method gets players into their starting positions, depending on number of players in game.
+     * <br>Provides that players' ids are in normal order.
+     * <p></p>
+     * This should use playerMap.
+     * <p></p>
+     * Should not be initiated manually, but implemented by playable game modes.
+     * @return Board with updated integer values, ready to be played on
+     */
     protected abstract List<List<Integer>> getStartingBoard();
 
+    /**
+     * Should not be initiated manually, but implemented by playable game modes.
+     * @return Two-dimensional list of integers representing the board
+     */
     protected abstract List<List<Integer>> getDefaultBoard();
 
     /**
      * Returns list of neighbors of a field at pos position.
-     * <br>This method can used for drawing purposes or as a helper function for getPossibleMovesMethod(Pair) method,
+     * <br>This method can be used for drawing purposes or as a helper function for getPossibleMovesMethod(Pair) method,
      * It should not define rules for pawn movements.
      * <p></p>
      * This method should use neighborCheck internally and not depend on current state of the game
@@ -134,6 +157,9 @@ public abstract class AbstractGameMode {
         tempMoveList.clear();
     }
 
+    /**
+     * Restores the game to the state before the last turn started.
+     */
     public void rollBack() {
         if (tempMoveList.isEmpty())
             return;
@@ -147,6 +173,11 @@ public abstract class AbstractGameMode {
 
     abstract public boolean canMove(Pos pos);
 
+    /**
+     * This returns respectful place on podium for each player if they won.
+     * <br>Should not be initiated manually, but implemented by playable game modes.
+     * @return Integer place for each player that won and null for players still playing
+     */
     abstract public List<Integer> getWinners();
 
     /**
@@ -166,7 +197,8 @@ public abstract class AbstractGameMode {
         private final ImageIcon background;
 
         /**
-         * Instantiates this class and automatically draws background based on information in board and
+         * Instantiates this class and automatically draws background based on information in board.
+         * Access it via background field.
          *
          * @param fieldDim width and height of a single field in client's GUI
          */

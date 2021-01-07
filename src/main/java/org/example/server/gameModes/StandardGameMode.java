@@ -6,6 +6,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Game mode with polished methods that apply rules of Chinese Checkers.
+ */
 class StandardGameMode extends BasicGameMode {
 
     public StandardGameMode(int maxPlayers) {
@@ -51,6 +54,14 @@ class StandardGameMode extends BasicGameMode {
         return true;
     }
 
+    /**
+     * Uses canMove method.
+     * <br>Adds entries to the list of moves in a turn.
+     *
+     * @param start Moving pawn
+     * @param finish Field you want to move to
+     * @return True if a move was successful, false otherwise
+     */
     public boolean move(Pos start, Pos finish) {
         // if temporary moveList is empty then, the turn has just started (or have been rolled back
         if (tempMoveList.isEmpty())

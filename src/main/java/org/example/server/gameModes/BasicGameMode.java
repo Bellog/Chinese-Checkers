@@ -7,6 +7,11 @@ import java.util.List;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * Game mode that implements some rules of Chinese Checkers.
+ * <p></p>
+ * Created to test the program in its early iterations.
+ */
 class BasicGameMode extends AbstractGameMode {
 
     public BasicGameMode(int maxPlayers) {
@@ -51,6 +56,11 @@ class BasicGameMode extends AbstractGameMode {
         return map;
     }
 
+    /**
+     * To win, you need to fill fields on the opposite side of your starting base.
+     *
+     * @return List of winning fields for each player
+     */
     @Override
     protected List<List<Pos>> getWinCondition() {
         List<List<Pos>> list = new ArrayList<>();
@@ -68,6 +78,12 @@ class BasicGameMode extends AbstractGameMode {
         return list;
     }
 
+    /**
+     * Gets neighbors from six directions.
+     *
+     * @param pos position (x, y) of a field to check its neighbors
+     * @return List of valid neighbor fields.
+     */
     @Override
     protected List<Pos> getNeighbors(Pos pos) {
         List<Pos> list = new ArrayList<>();
@@ -82,6 +98,12 @@ class BasicGameMode extends AbstractGameMode {
         return list;
     }
 
+    /**
+     * Any empty neighbor field is valid to move to.
+     *
+     * @param pos position of a pawn to check
+     * @return List of available fields
+     */
     @Override
     protected List<Pos> getPossibleMoves(Pos pos) {
         // if field state is -1 and is a neighbor then player can move there
@@ -102,6 +124,12 @@ class BasicGameMode extends AbstractGameMode {
         return winners;
     }
 
+    /**
+     * Checks if a given player has all the winning fields.
+     *
+     * @param player given row in winCondition list
+     * @return true if a player takes all his winning fields, false if not
+     */
     protected boolean isWinner(int player) {
         for (int j = 0; j < winCondition.get(player).size(); j++) {
             if (board.get(winCondition.get(player).get(j).y).get(winCondition.get(player).get(j).x) == player)
@@ -110,6 +138,12 @@ class BasicGameMode extends AbstractGameMode {
         return false;
     }
 
+    /**
+     * Players are labeled from 0 to n.
+     * <br>Empty fields are labeled with -1.
+     *
+     * @return Game board, ready
+     */
     @Override
     protected List<List<Integer>> getStartingBoard() {
         List<List<Integer>> board = new ArrayList<>();
@@ -178,6 +212,13 @@ class BasicGameMode extends AbstractGameMode {
         }
     }
 
+    /**
+     * If a p1 field is empty, you can take it from p0 field.
+     *
+     * @param p0 starting position
+     * @param p1 ending position
+     * @return true if a move was successful, false otherwise
+     */
     @Override
     public boolean move(Pos p0, Pos p1) {
         int state = getBoard().get(p1.y).get(p1.x);
@@ -189,6 +230,12 @@ class BasicGameMode extends AbstractGameMode {
         return false;
     }
 
+    /**
+     * You can always move.
+     *
+     * @param pos Pawn you want to move
+     * @return true if you can move, false otherwise
+     */
     @Override
     public boolean canMove(Pos pos) {
         return true;
