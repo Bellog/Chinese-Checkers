@@ -23,22 +23,19 @@ public class ClientConnection implements IClientConnection {
     private final AtomicReference<ObjectInputStream> input = new AtomicReference<>();
     private final AtomicReference<ObjectOutputStream> output = new AtomicReference<>();
     private final Socket socket;
-    private final IClient client;
     private final ReentrantLock LOCK = new ReentrantLock();
+    private volatile IClient client;
 
     /**
      * Class constructor.
-     *
-     * @param client connected user.
      */
-    public ClientConnection(IClient client) {
-        this.client = client;
+    public ClientConnection() {
         socket = new Socket();
     }
 
     @Override
-    public void init(Dimension fieldDim) throws Exception {
-
+    public void init(Dimension fieldDim, IClient client) throws Exception {
+        this.client = client;
         MavenXpp3Reader reader = new MavenXpp3Reader();
         Model model = reader.read(new FileReader("pom.xml"));
         String version = model.getVersion();

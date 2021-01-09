@@ -17,10 +17,10 @@ public class Client implements IClient {
     private GamePanel gamePanel;
     private SidePanel sidePanel;
 
-    public Client() {
-        conn = new ClientConnection(this);
+    public Client(IClientConnection conn) {
+        this.conn = conn;
         try {
-            conn.init(GamePanel.fieldDim);
+            conn.init(GamePanel.fieldDim, this);
         } catch (Exception e) {
             System.out.println("Failed to initialize connection, closing program");
             System.exit(1);
@@ -29,7 +29,7 @@ public class Client implements IClient {
 
     public static void main(String[] args) {
         System.out.println("Starting client");
-        new Client();
+        new Client(new ClientConnection());
     }
 
     /**

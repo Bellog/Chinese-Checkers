@@ -11,7 +11,9 @@ import java.awt.geom.Ellipse2D;
 /**
  * Mouse adapter class for game panel. <br>
  * This class assumes that there is no gap between individual fields and that game field starts at (x,y) = (0,0). <br>
- * In addition to that this class assumes that actual field is a circle at the center of a field specified by fieldDim
+ * In addition to that this class assumes that actual field is a circle at the center of a field specified by fieldDim.
+ * <br> This class assumes that mouseEvents are natural, i.e. mouseReleased() is called after mousePressed() and
+ * those methods cannot be called twice without calling the other one.
  */
 public abstract class MouseHandler extends MouseAdapter {
     /**
@@ -51,7 +53,7 @@ public abstract class MouseHandler extends MouseAdapter {
     }
 
     private Pos getPosition(Point p) {
-        if (fieldDisk.contains(p.x % fieldDim.width, p.y % fieldDim.height))
+        if (fieldDisk.contains((p.x - offset.x) % fieldDim.width, (p.y - offset.y) % fieldDim.height))
             return new Pos((p.x - offset.x) / fieldDim.width, (p.y - offset.y) / fieldDim.height);
         else
             return null;
@@ -60,10 +62,11 @@ public abstract class MouseHandler extends MouseAdapter {
     @Override
     public void mousePressed(MouseEvent e) {
         start = getPosition(e.getPoint());
-        if (start == null || !startCheck(start))
+        if (start == null || !startCheck(start)) {
+            start = null;
             return;
+        }
         setFieldSelection(start, true);
-
     }
 
     @Override

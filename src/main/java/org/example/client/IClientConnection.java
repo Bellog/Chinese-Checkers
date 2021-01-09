@@ -14,7 +14,7 @@ public interface IClientConnection {
      * @param fieldDim server requires this field after the connection is established
      * @throws Exception if initialization fails
      */
-    void init(Dimension fieldDim) throws Exception;
+    void init(Dimension fieldDim, IClient client) throws Exception;
 
     /**
      * Sends packet to the server
