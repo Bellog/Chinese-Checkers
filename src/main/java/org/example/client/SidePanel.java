@@ -120,7 +120,7 @@ public abstract class SidePanel extends JPanel {
      */
     private JTextArea getGameLogs() {
         JTextArea gameLogs = new JTextArea();
-        gameLogs.setText("GAME LOGS\n");
+        gameLogs.setText("Logs will be shown here\n");
         ((DefaultCaret) gameLogs.getCaret()).setUpdatePolicy(DefaultCaret.NEVER_UPDATE);
         gameLogs.setColumns(50);
         gameLogs.setEditable(false);
