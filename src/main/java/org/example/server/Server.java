@@ -23,18 +23,17 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class Server implements IServer {
 
-    private final IServerConnection conn;
-    private final GameHandler gameHandler;
     private final String version;
     private final AtomicInteger disconnected = new AtomicInteger(0);
     private final List<Dimension> fieldDims = new ArrayList<>();
-
+    private volatile IServerConnection conn;
+    private volatile GameHandler gameHandler;
     /**
      * If game is running then app_info code's handling should be different, see handlePacket() method for more information.
      */
     private volatile boolean gameStarted = false;
 
-    public Server(AvailableGameModes.GameModes mode, int maxPlayers) {
+    public Server() {
         String version = null;
 
         try {
@@ -48,10 +47,6 @@ public class Server implements IServer {
             System.exit(1);
         }
         this.version = version;
-
-        conn = new ServerConnection(this, maxPlayers);
-
-        gameHandler = new GameHandler(mode, maxPlayers, this);
     }
 
     /**
@@ -81,19 +76,30 @@ public class Server implements IServer {
             System.exit(1);
         }
 
-        var s = new Server(mode, players);
-        s.init();
+        var s = new Server();
+
+        var game = AvailableGameModes.getGameMode(mode, players);
+
+        if (game == null) {
+            System.out.println("Incorrect player count");
+            System.exit(1);
+        }
+
+        s.init(new GameHandler(game, s), new ServerConnection(s, players));
     }
 
     /**
      * Initialized server and waits for all players, then starts the game
      */
-    public void init() {
+    public void init(GameHandler handler, IServerConnection conn) {
+        this.gameHandler = handler;
+        this.conn = conn;
+        for (int i = 0; i < handler.getNumberOfPlayers(); i++)
+            fieldDims.add(null);
         new Thread(() -> {
             int i = 0;
             while (i < gameHandler.getNumberOfPlayers()) {
                 if (conn.addPlayer()) {
-                    fieldDims.add(null);
                     i++;
                 }
             }
@@ -135,8 +141,9 @@ public class Server implements IServer {
                 resumeGame(player);
             } else {
                 for (int i = 0; i < gameHandler.getNumberOfPlayers(); i++)
-                    conn.sendToPlayer(i, new Packet.PacketBuilder().code(Packet.Codes.INFO)
-                            .message("Could not find a new player, the game will not resume").build());
+                    if (i != player)
+                        conn.sendToPlayer(i, new Packet.PacketBuilder().code(Packet.Codes.INFO)
+                                .message("Could not find a new player, the game will not resume").build());
             }
         }).start();
     }
@@ -150,8 +157,9 @@ public class Server implements IServer {
                 disconnected.incrementAndGet();
                 gameHandler.handleInput(player, new Packet.PacketBuilder().code(Packet.Codes.TURN_ROLLBACK).build());
                 for (int i = 0; i < gameHandler.getNumberOfPlayers(); i++)
-                    conn.sendToPlayer(i, new Packet.PacketBuilder().code(Packet.Codes.GAME_RESUME)
-                            .message("Player " + player + " disconnected, pausing the game.").build());
+                    if (i != player)
+                        conn.sendToPlayer(i, new Packet.PacketBuilder().code(Packet.Codes.GAME_PAUSE)
+                                .message("Player " + player + " disconnected, pausing the game.").build());
                 addPlayer(player);
             }
             case APP_INFO -> {
@@ -192,13 +200,15 @@ public class Server implements IServer {
      */
     private void resumeGame(int player) {
         for (int i = 0; i < gameHandler.getNumberOfPlayers(); i++)
-            conn.sendToPlayer(i, new Packet.PacketBuilder().code(Packet.Codes.INFO)
-                    .message("Player " + player + " has reconnected.").build());
+            if (i != player)
+                conn.sendToPlayer(i, new Packet.PacketBuilder().code(Packet.Codes.INFO)
+                        .message("Player " + player + " has reconnected.").build());
 
         if (disconnected.get() == 0) {
             for (int i = 0; i < gameHandler.getNumberOfPlayers(); i++)
-                conn.sendToPlayer(i, new Packet.PacketBuilder().code(Packet.Codes.GAME_RESUME)
-                        .message("All players have reconnected, resuming the game.").build());
+                if (i != player)
+                    conn.sendToPlayer(i, new Packet.PacketBuilder().code(Packet.Codes.GAME_RESUME)
+                            .message("All players have reconnected, resuming the game.").build());
         }
     }
 

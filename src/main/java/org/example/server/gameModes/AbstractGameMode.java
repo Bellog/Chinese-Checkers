@@ -20,7 +20,7 @@ public abstract class AbstractGameMode {
     protected final List<List<Pos>> winCondition;
     protected final List<Color> colorScheme;
     protected final List<Integer> winners;
-    public List<Pos> tempMoveList = new ArrayList<>();
+    protected List<Pos> tempMoveList = new ArrayList<>();
 
     protected AbstractGameMode(int maxPlayers, List<Color> colorScheme) {
         //order of some instantiation of these fields may be important
@@ -122,11 +122,11 @@ public abstract class AbstractGameMode {
      *
      * @return game board
      */
-    public final List<List<Integer>> getBoard() {
+    public List<List<Integer>> getBoard() {
         return board;
     }
 
-    public final ImageIcon getBoardBackground(Dimension fieldDim) {
+    public ImageIcon getBoardBackground(Dimension fieldDim) {
         var background = new BoardBackgroundGenerator(fieldDim);
         return background.background;
     }

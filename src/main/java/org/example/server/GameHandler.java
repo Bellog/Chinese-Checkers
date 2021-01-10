@@ -3,7 +3,6 @@ package org.example.server;
 import org.example.Pos;
 import org.example.connection.Packet;
 import org.example.server.gameModes.AbstractGameMode;
-import org.example.server.gameModes.AvailableGameModes;
 
 import java.awt.*;
 import java.util.ArrayList;
@@ -23,15 +22,19 @@ public class GameHandler {
     private List<Integer> winners;
     private int currentPlayer;
 
-    public GameHandler(AvailableGameModes.GameModes mode, int players, IServer server) {
+    /**
+     * @param mode   game mode
+     * @param server not null
+     */
+    public GameHandler(AbstractGameMode mode, IServer server) {
         this.server = server;
-        this.game = AvailableGameModes.getGameMode(mode, players);
+        this.game = mode;
         if (game == null) {
-            System.out.println("Cannot instantiate this game mode");
+            System.out.println("Parameters are null");
             server.stop();
-            System.exit(1); //fail check if server.stop() does not exit the program
+            return;
         }
-
+        //List.copyOf(game.getWinners())
         winners = new ArrayList<>(game.getWinners()); // copies the list
         var rand = new Random();
         currentPlayer = rand.nextInt(game.getNumberOfPlayers());

@@ -2,13 +2,13 @@ package org.example.client;
 
 import org.example.Pos;
 import org.example.connection.Packet;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.awt.*;
 import java.awt.event.MouseEvent;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -31,7 +31,7 @@ public class MouseHandlerTest {
     private int countEndCheck = 0;
     private int countSend = 0;
 
-    @Before
+    @BeforeEach
     public void setup() {
         diameter = 10;
         dim = new Dimension(60, 30);
