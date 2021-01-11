@@ -20,6 +20,7 @@ class BasicGameModeTest {
         gameExample = new BasicGameMode(3);
     }
 
+    // check if a game for 2 players gets properly created
     @Test
     void getStartingBoardForTwo() {
         int maxPlayers = 2, temp;
@@ -45,6 +46,7 @@ class BasicGameModeTest {
         }
     }
 
+    // check if a game for 3 players gets properly created
     @Test
     void getStartingBoardForThree() {
         int maxPlayers = 3, temp;
@@ -70,6 +72,7 @@ class BasicGameModeTest {
         }
     }
 
+    // check if a game for 4 players gets properly created
     @Test
     void getStartingBoardForFour() {
         int maxPlayers = 4, temp;
@@ -95,6 +98,7 @@ class BasicGameModeTest {
         }
     }
 
+    // check if a game for 6 players gets properly created
     @Test
     void getStartingBoardForSix() {
         int maxPlayers = 6, temp;
