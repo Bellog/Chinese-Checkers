@@ -33,7 +33,7 @@ class AbstractGameModeTest {
 
     @Test
     void rollBack() {
-        Pos start = new Pos(12,4);
+        Pos start = new Pos(12, 4);
         Pos middle = new Pos(10, 10);
         Pos finish = new Pos(13, 13);
         int startValue = game.getBoard().get(start.y).get(start.x);
@@ -48,33 +48,5 @@ class AbstractGameModeTest {
         // check if values were swapped
         assertEquals(game.getBoard().get(start.y).get(start.x), finishValue);
         assertEquals(game.getBoard().get(finish.y).get(finish.x), startValue);
-    }
-
-    @Test
-    void getBoard() {
-    }
-
-    @Test
-    void getNumberOfPlayers() {
-    }
-
-    @Test
-    void getFieldInfo() {
-    }
-
-    @Test
-    void move() {
-    }
-
-    @Test
-    void canMove() {
-    }
-
-    @Test
-    void getWinners() {
-    }
-
-    @Test
-    void getColorScheme() {
     }
 }
