@@ -1,26 +1,32 @@
 package org.example.server.gameModes;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+
+import java.util.Random;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class AvailableGameModesTest {
 
     @Test
-    void getPlayerNumberList() {
-        assertNotNull(AvailableGameModes.getPlayerNumberList(AvailableGameModes.GameModes.BASIC));
-        assertNotNull(AvailableGameModes.getPlayerNumberList(AvailableGameModes.GameModes.STANDARD));
-        for (int i = 0; i < AvailableGameModes.getPlayerNumberList(AvailableGameModes.GameModes.BASIC).size(); i++) {
-            assertEquals(AvailableGameModes.getPlayerNumberList(AvailableGameModes.GameModes.BASIC).get(i),
-                    AvailableGameModes.getPlayerNumberList(AvailableGameModes.GameModes.STANDARD).get(i));
-        }
+    void getPlayerNumberListEntriesNotNull() {
+        // check if all modes in enum have entries
+        for (AvailableGameModes.GameModes mode : AvailableGameModes.GameModes.values())
+            assertNotNull(AvailableGameModes.getPlayerNumberList(mode));
     }
 
     @Test
-    void getGameMode() {
-        AbstractGameMode game = AvailableGameModes.getGameMode(AvailableGameModes.GameModes.BASIC, 2);
-        assertNotNull(AvailableGameModes.getGameMode(AvailableGameModes.GameModes.BASIC, 2));
-        assertNull(AvailableGameModes.getGameMode(AvailableGameModes.GameModes.BASIC, 1));
+    void getGameModeGettingGames() {
+        Random random = new Random();
+        int index = random.nextInt(4);
+        int maxPlayersBasic = AvailableGameModes.getPlayerNumberList(AvailableGameModes.GameModes.BASIC).get(index);
+        int maxPlayersStandard = AvailableGameModes.getPlayerNumberList(AvailableGameModes.GameModes.STANDARD).get(index);
+        // check if a randomly given game option can be created
+        assertNotNull(AvailableGameModes.getGameMode(AvailableGameModes.GameModes.BASIC, maxPlayersBasic));
+        assertNotNull(AvailableGameModes.getGameMode(AvailableGameModes.GameModes.STANDARD, maxPlayersStandard));
+        // illegal numbers of players should result in null
+        assertNull(AvailableGameModes.getGameMode(AvailableGameModes.GameModes.BASIC, 5));
         assertNull(AvailableGameModes.getGameMode(AvailableGameModes.GameModes.STANDARD, 5));
     }
 }
