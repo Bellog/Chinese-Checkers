@@ -12,7 +12,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class StandardGameModeTest {
 
-    static StandardGameMode gameEx;
+    StandardGameMode gameEx;
 
     // some tests may alter the game, e.g. the board
     @BeforeEach
@@ -122,36 +122,6 @@ class StandardGameModeTest {
         for (int i = 1; i <= maxPlayers; i++) {
             assertEquals(fieldCount.get(i), 10);
         }
-    }
-
-    Pos getPosEmpty () {
-        int i = 0, x = 0, y = -1;
-        List<List<Integer>> board = gameEx.getBoard();
-        while (i != -1) {
-            y++;
-            x = 0;
-            while (i != -1 && x < board.get(y).size() - 1) {
-                x++;
-                if (board.get(y).get(x) != null)
-                    i = board.get(y).get(x);
-            }
-        }
-        return new Pos(x, y);
-    }
-
-    Pos getPosPlayer () {
-        int i = -1, x = 0, y = -1;
-        List<List<Integer>> board = gameEx.getBoard();
-        while (i == -1) {
-            y++;
-            x = 0;
-            while (i == -1 && x < board.get(y).size() - 1) {
-                x++;
-                if (board.get(y).get(x) != null)
-                    i = board.get(y).get(x);
-            }
-        }
-        return new Pos(x, y);
     }
 
     @Test
