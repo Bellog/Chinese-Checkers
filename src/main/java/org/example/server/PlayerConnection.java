@@ -99,7 +99,7 @@ public abstract class PlayerConnection implements IPlayerConnection {
         while (!socket.isClosed() && socket.isConnected() && isActive) {
             try {
                 LOCK.lock();
-                Packet p = packetQueue.poll(2, TimeUnit.SECONDS);
+                Packet p = packetQueue.poll(1, TimeUnit.SECONDS);
                 if (p == null)
                     continue;
                 output.get().reset();
