@@ -11,6 +11,7 @@ import java.io.PrintStream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class ClientTest {
@@ -22,8 +23,7 @@ public class ClientTest {
     public void setup() {
         IClientConnection conn = mock(ClientConnection.class);
 
-        client = new Client(conn);
-
+        client = spy(new Client(conn));
     }
 
     @Test

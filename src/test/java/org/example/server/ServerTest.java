@@ -1,6 +1,7 @@
 package org.example.server;
 
 import org.example.connection.Packet;
+import org.example.server.replay.GameSaveRepository;
 import org.junit.jupiter.api.*;
 import org.mockito.stubbing.Answer;
 
@@ -23,8 +24,8 @@ public class ServerTest {
     private final PrintStream out = System.out;
 
     private final int players = 3;
-    private final Server server = new Server();
-    private GameHandler handler;
+    private Server server;
+    private IGameHandler handler;
     private ServerConnection conn;
 
     @BeforeAll
@@ -32,6 +33,7 @@ public class ServerTest {
         System.setOut(mock(PrintStream.class)); //remove system.out text in test output
         handler = mock(GameHandler.class);
         conn = mock(ServerConnection.class);
+        server = new Server(mock(GameSaveRepository.class));
         AtomicInteger i = new AtomicInteger();
 
         when(conn.addPlayer()).then((Answer<Boolean>) invocation -> {

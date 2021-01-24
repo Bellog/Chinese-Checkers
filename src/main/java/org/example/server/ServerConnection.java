@@ -27,23 +27,26 @@ public class ServerConnection implements IServerConnection {
      */
     public ServerConnection(IServer server, int maxPlayers) {
         this.server = server;
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            try {
+                serverSocket.get().close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }));
 
         try {
             serverSocket.set(new ServerSocket(ConnectionHelper.DEFAULT_PORT));
             // Maximum time server will wait for find a new player, in seconds.
             serverSocket.get().setSoTimeout(60 * 1000);
         } catch (IOException ignored) {
+            ignored.printStackTrace();
         } finally {
             if (serverSocket.get() == null) {
                 System.out.println("Could not create server socket, closing program.");
-                System.exit(1);
-            }
-            System.out.println("Opened server.");
-        }
-
-        if (serverSocket.get() == null) {
-            System.out.println("Failed to create server");
-            System.exit(1);
+                server.stop();
+            } else
+                System.out.println("Opened server.");
         }
 
         for (int i = 0; i < maxPlayers; i++)

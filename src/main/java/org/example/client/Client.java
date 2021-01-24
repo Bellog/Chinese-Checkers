@@ -1,6 +1,7 @@
 package org.example.client;
 
 import org.example.connection.Packet;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.swing.*;
 import java.awt.*;
@@ -9,6 +10,7 @@ import java.util.List;
 /*
     This class holds client's logic (i.e which frame to show, etc.)
  */
+@org.springframework.stereotype.Component
 public class Client implements IClient {
 
     private final IClientConnection conn;
@@ -17,19 +19,19 @@ public class Client implements IClient {
     private GamePanel gamePanel;
     private SidePanel sidePanel;
 
+    @Autowired
     public Client(IClientConnection conn) {
         this.conn = conn;
+    }
+
+    public void init() {
         try {
+            System.out.println("Initializing connection");
             conn.init(GamePanel.fieldDim, this);
         } catch (Exception e) {
             System.out.println("Failed to initialize connection, closing program");
-            System.exit(1);
+            System.exit(0);
         }
-    }
-
-    public static void main(String[] args) {
-        System.out.println("Starting client");
-        new Client(new ClientConnection());
     }
 
     /**

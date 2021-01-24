@@ -4,6 +4,7 @@ import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
 import org.example.connection.ConnectionHelper;
 import org.example.connection.Packet;
+import org.springframework.stereotype.Service;
 
 import java.awt.*;
 import java.io.FileReader;
@@ -18,6 +19,7 @@ import java.util.concurrent.locks.ReentrantLock;
 /**
  * Responsible for communication with the server.
  */
+@Service
 public class ClientConnection implements IClientConnection {
 
     private final AtomicReference<ObjectInputStream> input = new AtomicReference<>();

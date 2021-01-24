@@ -22,7 +22,7 @@ public class AppFrame extends JFrame {
             @Override
             public void windowClosing(WindowEvent e) {
                 int option = JOptionPane.showOptionDialog(AppFrame.this,
-                        "EXIT", "Are you sure you want to quit?\nYou may not be able to rejoin later!",
+                        "Are you sure you want to quit?\nYou may not be able to rejoin later!", "EXIT",
                         JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, null, null);
                 if (option == JOptionPane.YES_OPTION)
                     System.exit(0);

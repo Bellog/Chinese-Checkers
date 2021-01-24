@@ -4,7 +4,11 @@ import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
 import org.example.connection.Packet;
-import org.example.server.gameModes.AvailableGameModes;
+import org.example.server.replay.GameSaveRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.data.annotation.Transient;
+import org.springframework.stereotype.Component;
 
 import java.awt.*;
 import java.io.FileReader;
@@ -12,7 +16,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.Scanner;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -21,20 +24,26 @@ import java.util.concurrent.atomic.AtomicInteger;
  * <br> This class can handle a singe game at once and is tied to it (server closes when game ends).
  * <p></p> Main method inside uses cli to choose a game mode and starts server.
  */
+@Component
+@Lazy
 public class Server implements IServer {
 
     private final String version;
     private final AtomicInteger disconnected = new AtomicInteger(0);
     private final List<Dimension> fieldDims = new ArrayList<>();
+    @Transient
+    private final GameSaveRepository repository;
     private volatile IServerConnection conn;
-    private volatile GameHandler gameHandler;
+    private volatile IGameHandler gameHandler;
     /**
      * If game is running then app_info code's handling should be different, see handlePacket() method for more information.
      */
     private volatile boolean gameStarted = false;
 
-    public Server() {
+    @Autowired
+    public Server(GameSaveRepository repository) {
         String version = null;
+        this.repository = repository;
 
         try {
             MavenXpp3Reader reader = new MavenXpp3Reader();
@@ -44,54 +53,12 @@ public class Server implements IServer {
                 throw new IOException();
         } catch (IOException | XmlPullParserException e) {
             System.out.println("Could not get program version");
-            System.exit(1);
+            System.exit(0);
         }
         this.version = version;
     }
 
-    /**
-     * Starts server and asks for server configuration using cli.
-     *
-     * @param args ignored
-     */
-    public static void main(String[] args) {
-        var sc = new Scanner(System.in);
-        System.out.println("Please choose one of available game modes:");
-        for (int i = 0; i < AvailableGameModes.GameModes.values().length; i++) {
-            System.out.println("\t" + i + ": " + AvailableGameModes.GameModes.values()[i].name());
-        }
-        AvailableGameModes.GameModes mode = null;
-        int players = 0;
-        try {
-            mode = AvailableGameModes.GameModes.values()[sc.nextInt()];
-            if (mode == null)
-                throw new Exception();
-            System.out.println("Please choose one of these player configuration for chosen game mode:\n\t" +
-                               AvailableGameModes.getPlayerNumberList(mode));
-            players = sc.nextInt();
-            if (players <= 0)
-                throw new Exception();
-        } catch (Exception e) {
-            System.out.println("Incorrect input");
-            System.exit(1);
-        }
-
-        var s = new Server();
-
-        var game = AvailableGameModes.getGameMode(mode, players);
-
-        if (game == null) {
-            System.out.println("Incorrect player count");
-            System.exit(1);
-        }
-
-        s.init(new GameHandler(game, s), new ServerConnection(s, players));
-    }
-
-    /**
-     * Initialized server and waits for all players, then starts the game
-     */
-    public void init(GameHandler handler, IServerConnection conn) {
+    public void init(IGameHandler handler, IServerConnection conn) {
         this.gameHandler = handler;
         this.conn = conn;
         for (int i = 0; i < handler.getNumberOfPlayers(); i++)
@@ -121,7 +88,7 @@ public class Server implements IServer {
             }
             if (wait == 100) {
                 System.out.println("Could not get data from client, closing the program");
-                System.exit(1);
+                System.exit(0);
             }
 
             gameHandler.gameStart(fieldDims);
@@ -150,7 +117,7 @@ public class Server implements IServer {
 
     @Override
     public synchronized void handlePacket(int player, Packet packet) {
-        System.out.println(player + " : " + packet.getCode().name());
+        System.out.println("player " + player + ": " + packet.getCode().name());
         switch (packet.getCode()) {
             case CONNECTION_LOST -> {
                 System.out.println("Lost connection to player " + player + ", pausing the game");
@@ -184,13 +151,17 @@ public class Server implements IServer {
     public void stop() {
         System.out.println("Stopping the server");
         new Thread(() -> {
+            var save = gameHandler.getSave();
+            System.out.println("SAVE: " + save.getMode().name() + " for " + save.getPlayers() + " players (" +
+                               save.getMoves().size() + " moves)");
+            repository.saveAndFlush(gameHandler.getSave());
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
             System.exit(0);
-        });
+        }).start();
     }
 
     /**

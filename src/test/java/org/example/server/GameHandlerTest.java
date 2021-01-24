@@ -5,6 +5,7 @@ import org.example.Pos;
 import org.example.connection.Packet;
 import org.example.server.gameModes.AbstractGameMode;
 import org.example.server.gameModes.AvailableGameModes;
+import org.example.server.replay.GameSave;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.platform.commons.support.HierarchyTraversalMode;
@@ -32,7 +33,7 @@ public class GameHandlerTest {
     private final int players = 4;
     private final PrintStream systemOut = System.out;
     private int current = 0;
-    private GameHandler handler;
+    private IGameHandler handler;
     private IServer server;
     private AbstractGameMode mode;
 
@@ -55,7 +56,7 @@ public class GameHandlerTest {
         when(mode.getWinners()).thenReturn(Collections.nCopies(players, null));
 
         server = mock(Server.class);
-        handler = new GameHandler(mode, server);
+        handler = new GameHandler(mode, server, new GameSave());
         var f = ReflectionSupport.findFields(handler.getClass(), field -> field.getName().equals("currentPlayer"), HierarchyTraversalMode.BOTTOM_UP);
         assertEquals(1, f.size()); // there should by only one field with name currentPlayer
         f.get(0).setAccessible(true);
@@ -65,7 +66,7 @@ public class GameHandlerTest {
     @Test
     public void testConstructorNull() {
         // overwrites handler to test special case
-        handler = new GameHandler(null, server);
+        handler = new GameHandler(null, server, new GameSave());
         verify(server, times(1)).stop();
     }
 

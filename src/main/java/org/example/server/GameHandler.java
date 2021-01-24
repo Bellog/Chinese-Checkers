@@ -3,6 +3,7 @@ package org.example.server;
 import org.example.Pos;
 import org.example.connection.Packet;
 import org.example.server.gameModes.AbstractGameMode;
+import org.example.server.replay.GameSave;
 
 import java.awt.*;
 import java.util.ArrayList;
@@ -14,8 +15,9 @@ import java.util.concurrent.locks.ReentrantLock;
 /**
  * Handles a single game, ensures correct turn order and players' actions
  */
-public class GameHandler {
+public class GameHandler implements IGameHandler {
 
+    private final GameSave save;
     private final AbstractGameMode game;
     private final ReentrantLock LOCK = new ReentrantLock();
     private final IServer server;
@@ -25,21 +27,23 @@ public class GameHandler {
     /**
      * @param mode   game mode
      * @param server not null
+     * @param save   game save
      */
-    public GameHandler(AbstractGameMode mode, IServer server) {
+    public GameHandler(AbstractGameMode mode, IServer server, GameSave save) {
         this.server = server;
         this.game = mode;
+        this.save = save;
         if (game == null) {
             System.out.println("Parameters are null");
             server.stop();
             return;
         }
-        //List.copyOf(game.getWinners())
         winners = new ArrayList<>(game.getWinners()); // copies the list
         var rand = new Random();
         currentPlayer = rand.nextInt(game.getNumberOfPlayers());
     }
 
+    @Override
     public void handleInput(int player, Packet packet) {
         LOCK.lock();
         if (player != currentPlayer) {
@@ -53,6 +57,9 @@ public class GameHandler {
         switch (packet.getCode()) {
             case TURN_MOVE -> {
                 if (move(packet.getStartPos(), packet.getEndPos())) {
+                    System.out.println("Player " + (currentPlayer + 1) + " moved: " +
+                                       packet.getStartPos().toString() + " -> " + packet.getEndPos().toString());
+                    save.addMove(packet.getStartPos(), packet.getEndPos(), currentPlayer);
                     for (int i = 0; i < game.getNumberOfPlayers(); i++)
                         server.sendToPlayer(i, new Packet.PacketBuilder().code(Packet.Codes.BOARD_UPDATE)
                                 .board(game.getBoard()).build());
@@ -62,6 +69,7 @@ public class GameHandler {
             case TURN_END -> endTurn();
             case TURN_ROLLBACK -> {
                 game.rollBack();
+                save.rollbackTurn();
                 for (int i = 0; i < game.getNumberOfPlayers(); i++)
                     server.sendToPlayer(i, new Packet.PacketBuilder().code(Packet.Codes.BOARD_UPDATE)
                             .board(game.getBoard()).build());
@@ -70,26 +78,18 @@ public class GameHandler {
         LOCK.unlock();
     }
 
+    @Override
     public int getNumberOfPlayers() {
         return game.getNumberOfPlayers();
     }
 
-    /**
-     * Starts the game and notifies all players
-     *
-     * @param fieldDims see {@link AbstractGameMode#getBoardBackground(Dimension)} for more information
-     */
+    @Override
     public void gameStart(List<Dimension> fieldDims) {
         for (int i = 0; i < game.getNumberOfPlayers(); i++)
             joinPlayer(i, fieldDims.get(i));
     }
 
-    /**
-     * Adds player to the game and sends {@link Packet.Codes#GAME_START} to that player
-     *
-     * @param player   which player to add
-     * @param fieldDim used to generate background image
-     */
+    @Override
     public void joinPlayer(int player, Dimension fieldDim) {
         server.sendToPlayer(player, new Packet.PacketBuilder()
                 .code(Packet.Codes.GAME_START).colorScheme(game.getColorScheme())
@@ -126,10 +126,7 @@ public class GameHandler {
                 list.get(i).add("" + (winners.get(i) + 1));
         }
 
-        List<String> header = new ArrayList<>();
-        header.add("Player");
-        header.add("Pos");
-        list.add(0, header);
+        list.add(0, List.of("Player", "Pos"));
         return list;
     }
 
@@ -145,14 +142,12 @@ public class GameHandler {
 
     private void endTurn() {
         server.sendToPlayer(currentPlayer, new Packet.PacketBuilder().code(Packet.Codes.TURN_END).build());
-        System.out.println("END: " + currentPlayer);
         do {
             currentPlayer = (currentPlayer + 1) % game.getNumberOfPlayers();
         } while (winners.get(currentPlayer) != null);
-        System.out.println(winners.toString());
         //if winners[i] != null, then that player is a winner, they should not be able to play any more turns
         game.endTurn();
-        System.out.println("START:" + currentPlayer + " out of " + game.getNumberOfPlayers());
+        save.commitTurn();
         startTurn();
     }
 
@@ -168,6 +163,7 @@ public class GameHandler {
             int place = (int) winners.stream().filter(Objects::nonNull).count() + 1;
             winners = newWinners;
             for (int i = 0; i < game.getNumberOfPlayers(); i++) {
+                System.out.println("WINNERS: Player " + (currentPlayer + 1) + " has won " + place + ". place");
                 server.sendToPlayer(i, new Packet.PacketBuilder().code(Packet.Codes.PLAYER_UPDATE)
                         .playerInfo(generatePlayerInfo(i))
                         .message("Player " + (currentPlayer + 1) + " has won " + place + ". place!")
@@ -175,6 +171,7 @@ public class GameHandler {
                 if (place == game.getNumberOfPlayers() - 1) {
                     server.sendToPlayer(i, new Packet.PacketBuilder()
                             .code(Packet.Codes.GAME_END).message("The game has ended!").build());
+                    save.commitTurn();
                     server.stop();
                 }
             }
@@ -213,5 +210,10 @@ public class GameHandler {
                     .message("You cannot move from this field").build());
             return false;
         }
+    }
+
+    @Override
+    public GameSave getSave() {
+        return save;
     }
 }
