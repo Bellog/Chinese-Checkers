@@ -1,5 +1,8 @@
 package org.example.connection;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.example.Pos;
 import org.example.server.gameModes.AbstractGameMode;
 
@@ -12,6 +15,7 @@ import java.util.List;
  * Packet class used to send data between server and clients, each code from Codes enum determines which fields are set.
  * When writing method that handles packets should be wary of special codes, see {@link Packet.Codes} for more information.
  */
+@JsonDeserialize(builder = Packet.PacketBuilder.class)
 public class Packet implements Serializable {
 
     /**
@@ -41,9 +45,9 @@ public class Packet implements Serializable {
         playerInfo = builder.playerInfo;
         playerId = builder.playerId;
         message = builder.message;
-        startPos = builder.start;
-        endPos = builder.end;
-        colors = builder.colorScheme;
+        startPos = builder.startPos;
+        endPos = builder.endPos;
+        colors = builder.colors;
         image = builder.image;
         fieldDim = builder.fieldDim;
     }
@@ -92,7 +96,7 @@ public class Packet implements Serializable {
      *
      * @return color scheme list
      */
-    public List<Color> getColorScheme() {
+    public List<Color> getColors() {
         return colors;
     }
 
@@ -101,6 +105,7 @@ public class Packet implements Serializable {
      *
      * @return board background image
      */
+    @JsonSerialize(using = ImageIconSerializer.class)
     public ImageIcon getImage() {
         return image;
     }
@@ -209,6 +214,7 @@ public class Packet implements Serializable {
      * Builder class for Packet, refer to {@link Packet.Codes} to see which fields you need to set.
      * Fields not set will be null.
      */
+    @JsonPOJOBuilder(withPrefix = "")
     public static class PacketBuilder {
         private Codes code = null;
         private List<List<Integer>> board = null;
@@ -216,9 +222,9 @@ public class Packet implements Serializable {
         private String message = null;
         private Integer playerId = null;
         private Dimension fieldDim = null;
-        private Pos start = null;
-        private Pos end = null;
-        private List<Color> colorScheme = null;
+        private Pos startPos = null;
+        private Pos endPos = null;
+        private List<Color> colors = null;
         private ImageIcon image;
 
         public PacketBuilder code(Codes code) {
@@ -251,23 +257,24 @@ public class Packet implements Serializable {
             return this;
         }
 
-        public PacketBuilder start(Pos start) {
-            this.start = start;
+        public PacketBuilder startPos(Pos startPos) {
+            this.startPos = startPos;
             return this;
         }
 
-        public PacketBuilder end(Pos end) {
-            this.end = end;
+        public PacketBuilder endPos(Pos endPos) {
+            this.endPos = endPos;
             return this;
         }
 
+        @JsonDeserialize(using = ImageIconDeserializer.class)
         public PacketBuilder image(ImageIcon image) {
             this.image = image;
             return this;
         }
 
-        public PacketBuilder colorScheme(List<Color> colorScheme) {
-            this.colorScheme = colorScheme;
+        public PacketBuilder colors(List<Color> colors) {
+            this.colors = colors;
             return this;
         }
 

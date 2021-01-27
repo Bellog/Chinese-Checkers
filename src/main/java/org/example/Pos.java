@@ -1,5 +1,9 @@
 package org.example;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.io.Serializable;
 
 /**
@@ -8,12 +12,14 @@ import java.io.Serializable;
  * Pair class makes it easier to send such values.
  */
 public final class Pos implements Serializable {
+    @JsonIgnore
     private static final long serialVersionUID = 1003L;
 
     public final int x;
     public final int y;
 
-    public Pos(int x, int y) {
+    @JsonCreator
+    public Pos(@JsonProperty("x") int x, @JsonProperty("y") int y) {
         this.x = x;
         this.y = y;
     }

@@ -1,5 +1,9 @@
 package org.example.connection;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.io.Serializable;
 
 /**
@@ -10,6 +14,7 @@ import java.io.Serializable;
  * server should read said integer, but should not do anything with it
  */
 public class ConnectionHelper implements Serializable {
+    @JsonIgnore
     public static final int DEFAULT_PORT = 4413;
     /**
      * Used by Serializable interface, do not change
@@ -23,7 +28,9 @@ public class ConnectionHelper implements Serializable {
      *
      * @param message message to send, see this class' documentation for more information
      */
-    public ConnectionHelper(Message message, String version) {
+    @JsonCreator
+    public ConnectionHelper(@JsonProperty("message") Message message,
+                            @JsonProperty("version") String version) {
         this.message = message;
         this.version = version;
     }

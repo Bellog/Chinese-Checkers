@@ -102,7 +102,7 @@ public class GameHandlerTest {
 
         // actual start and end do not matter
         handler.handleInput(current, new Packet.PacketBuilder().code(Packet.Codes.TURN_MOVE)
-                .start(new Pos(1, 1)).end(new Pos(2, 2)).build());
+                .startPos(new Pos(1, 1)).endPos(new Pos(2, 2)).build());
         verify(server, times(1)).sendToPlayer(eq(current), notNull());
     }
 
@@ -114,7 +114,7 @@ public class GameHandlerTest {
         when(mode.move(notNull(), notNull())).thenReturn(true);
 
         handler.handleInput(current, new Packet.PacketBuilder().code(Packet.Codes.TURN_MOVE)
-                .start(new Pos(1, 1)).end(new Pos(2, 2)).build());
+                .startPos(new Pos(1, 1)).endPos(new Pos(2, 2)).build());
         // all other player should get information that someone has moved
         // + all players should get board update
         verify(server, times(players - 1 + players)).sendToPlayer(anyInt(), notNull());
@@ -127,7 +127,7 @@ public class GameHandlerTest {
         when(mode.canMove(notNull())).thenReturn(false);
 
         handler.handleInput(current, new Packet.PacketBuilder().code(Packet.Codes.TURN_MOVE)
-                .start(new Pos(1, 1)).end(new Pos(2, 2)).build());
+                .startPos(new Pos(1, 1)).endPos(new Pos(2, 2)).build());
         // only current player should get any info
         verify(server, times(1)).sendToPlayer(anyInt(), notNull());
     }
@@ -140,7 +140,7 @@ public class GameHandlerTest {
         when(mode.move(notNull(), notNull())).thenReturn(false);
 
         handler.handleInput(current, new Packet.PacketBuilder().code(Packet.Codes.TURN_MOVE)
-                .start(new Pos(1, 1)).end(new Pos(2, 2)).build());
+                .startPos(new Pos(1, 1)).endPos(new Pos(2, 2)).build());
         // only current player should get any info
         verify(server, times(1)).sendToPlayer(eq(current), notNull());
         verify(server, times(0)).sendToPlayer(intThat(v -> v != current), notNull());
@@ -180,7 +180,7 @@ public class GameHandlerTest {
         when(mode.move(notNull(), notNull())).thenReturn(true);
 
         handler.handleInput(current, new Packet.PacketBuilder().code(Packet.Codes.TURN_MOVE)
-                .start(new Pos(1, 1)).end(new Pos(2, 2)).build());
+                .startPos(new Pos(1, 1)).endPos(new Pos(2, 2)).build());
 
         verify(server, times(players)).sendToPlayer(anyInt(),
                 argThat(c -> c.getCode().equals(Packet.Codes.PLAYER_UPDATE)));

@@ -78,7 +78,7 @@ public abstract class MouseHandler extends MouseAdapter {
         if (end == null || start.equals(end))
             return; //no need to send a movement that does not do anything
         if (endCheck(end))
-            send(new Packet.PacketBuilder().code(Packet.Codes.TURN_MOVE).start(start).end(end).build());
+            send(new Packet.PacketBuilder().code(Packet.Codes.TURN_MOVE).startPos(start).endPos(end).build());
     }
 
     /**

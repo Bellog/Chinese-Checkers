@@ -84,7 +84,7 @@ public class ReplayGameHandler implements IGameHandler {
     @Override
     public void gameStart(List<Dimension> fieldDims) {
         server.sendToPlayer(-1, new Packet.PacketBuilder()
-                .code(Packet.Codes.GAME_START).colorScheme(game.getColorScheme())
+                .code(Packet.Codes.GAME_START).colors(game.getColorScheme())
                 .board(game.getBoard())
                 .playerId(0)
                 .image(game.getBoardBackground(fieldDims.get(0)))

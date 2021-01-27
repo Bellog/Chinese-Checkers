@@ -92,7 +92,7 @@ public class GameHandler implements IGameHandler {
     @Override
     public void joinPlayer(int player, Dimension fieldDim) {
         server.sendToPlayer(player, new Packet.PacketBuilder()
-                .code(Packet.Codes.GAME_START).colorScheme(game.getColorScheme())
+                .code(Packet.Codes.GAME_START).colors(game.getColorScheme())
                 .board(game.getBoard())
                 .playerId(player)
                 .image(game.getBoardBackground(fieldDim))

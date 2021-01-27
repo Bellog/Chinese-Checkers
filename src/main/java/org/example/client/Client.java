@@ -99,7 +99,7 @@ public class Client implements IClient {
     @Override
     public synchronized void handlePacket(Packet packet) {
         switch (packet.getCode()) {
-            case GAME_START -> startGame(packet.getColorScheme(), packet.getPlayerId(),
+            case GAME_START -> startGame(packet.getColors(), packet.getPlayerId(),
                     packet.getBoard(), packet.getImage(), packet.getPlayerInfo());
             case TURN_START, GAME_RESUME -> setPanelStatus(true);
             case TURN_END, GAME_PAUSE, CONNECTION_LOST -> setPanelStatus(false);

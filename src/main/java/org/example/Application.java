@@ -1,6 +1,8 @@
 package org.example;
 
 import org.example.client.Client;
+import org.example.connection.ConnectionHelper;
+import org.example.connection.Packet;
 import org.example.server.GameHandler;
 import org.example.server.Server;
 import org.example.server.ServerConnection;
@@ -16,6 +18,8 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
+import javax.swing.*;
+import java.awt.image.BufferedImage;
 import java.util.List;
 import java.util.Scanner;
 import java.util.stream.Collectors;
@@ -44,8 +48,30 @@ public class Application {
                 case "c" -> startClient();
                 case "s" -> startServer(sc);
                 case "r" -> startReplay(repository, sc);
+                case "t" -> test();
             }
         };
+    }
+
+    /**
+     * quick test to check if jsons work
+     */
+    private void test() {
+        var image = new BufferedImage(10, 10, BufferedImage.TYPE_3BYTE_BGR);
+        image.getGraphics().drawLine(0, 0, 4, 5);
+        var icon = new ImageIcon(image);
+        var p = new Packet.PacketBuilder().code(Packet.Codes.INFO).image(icon).build();
+
+        var s = JsonUtils.toJson(p);
+        Packet p1 = JsonUtils.fromJson(s, Packet.class);
+
+        System.out.println(JsonUtils.toJson(p1));
+
+        var conn = new ConnectionHelper(ConnectionHelper.Message.REQUEST_RESPONSE, "V0.1");
+
+        s = JsonUtils.toJson(conn);
+        var conn1 = JsonUtils.fromJson(s, ConnectionHelper.class);
+        System.out.println(JsonUtils.toJson(conn1));
     }
 
     private void startClient() {

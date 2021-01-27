@@ -35,7 +35,7 @@ public class Replay {
             }
 
             server.handlePacket(currentPlayer, new Packet.PacketBuilder()
-                    .code(Packet.Codes.TURN_MOVE).start(move.getStart()).end(move.getEnd()).build());
+                    .code(Packet.Codes.TURN_MOVE).startPos(move.getStart()).endPos(move.getEnd()).build());
         }
         server.sendToPlayer(-1, new Packet.PacketBuilder()
                 .code(Packet.Codes.GAME_END).message("Replay has ended").build());
