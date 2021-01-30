@@ -84,23 +84,20 @@ public class GameHandler implements IGameHandler {
     }
 
     @Override
-    public void gameStart(List<Dimension> fieldDims) {
-        for (int i = 0; i < game.getNumberOfPlayers(); i++)
-            joinPlayer(i, fieldDims.get(i));
+    public void gameStart() {
+        startTurn();
     }
 
     @Override
     public void joinPlayer(int player, Dimension fieldDim) {
         server.sendToPlayer(player, new Packet.PacketBuilder()
-                .code(Packet.Codes.GAME_START).colors(game.getColorScheme())
+                .code(Packet.Codes.GAME_SETUP).colors(game.getColorScheme())
                 .board(game.getBoard())
                 .playerId(player)
                 .image(game.getBoardBackground(fieldDim))
                 .playerInfo(generatePlayerInfo(player))
                 .message("You have joined the game as player " + (player + 1))
                 .build());
-        if (player == currentPlayer)
-            startTurn();
     }
 
     /**

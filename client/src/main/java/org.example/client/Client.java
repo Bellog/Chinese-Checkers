@@ -14,7 +14,6 @@ import java.util.List;
 public class Client implements IClient {
 
     private final IClientConnection conn;
-    private volatile boolean status = true;
     private AppFrame frame;
     private GamePanel gamePanel;
     private SidePanel sidePanel;
@@ -55,7 +54,6 @@ public class Client implements IClient {
             }
         };
         sidePanel = new SidePanel(playerInfo, colorScheme, gamePanel.getPreferredSize().height) {
-
             @Override
             public void send(Packet packet) {
                 conn.send(packet);
@@ -98,14 +96,10 @@ public class Client implements IClient {
     @Override
     public synchronized void handlePacket(Packet packet) {
         switch (packet.getCode()) {
-            case GAME_START -> startGame(packet.getColors(), packet.getPlayerId(),
+            case GAME_SETUP -> startGame(packet.getColors(), packet.getPlayerId(),
                     packet.getBoard(), packet.getImage(), packet.getPlayerInfo());
             case TURN_START, GAME_RESUME -> setPanelStatus(true);
-            case TURN_END, GAME_PAUSE, DISCONNECT -> setPanelStatus(false);
-            case GAME_END -> {
-                status = false;
-                log(packet.getMessage());
-            }
+            case TURN_END, GAME_PAUSE, DISCONNECT, GAME_END -> setPanelStatus(false);
             case BOARD_UPDATE -> {
                 if (gamePanel != null)
                     gamePanel.update(packet.getBoard());
@@ -116,7 +110,6 @@ public class Client implements IClient {
             }
         }
 
-        if (status)
-            log(packet.getMessage());
+        log(packet.getMessage());
     }
 }

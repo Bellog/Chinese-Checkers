@@ -11,3 +11,5 @@ spring:
     url: OVERWRITE_ME_IN_EXTERNAL_SOURCE
     username: OVERWRITE_ME_IN_EXTERNAL_SOURCE
     password: OVERWRITE_ME_IN_EXTERNAL_SOURCE
+  profiles:
+    active: normal

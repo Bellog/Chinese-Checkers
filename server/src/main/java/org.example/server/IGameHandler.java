@@ -1,11 +1,9 @@
 package org.example.server;
 
 import org.example.connection.Packet;
-import org.example.server.gameModes.AbstractGameMode;
 import org.example.server.replay.GameSave;
 
 import java.awt.*;
-import java.util.List;
 
 public interface IGameHandler {
     void handleInput(int player, Packet packet);
@@ -14,13 +12,11 @@ public interface IGameHandler {
 
     /**
      * Starts the game and notifies all players
-     *
-     * @param fieldDims see {@link AbstractGameMode#getBoardBackground(Dimension)} for more information
      */
-    void gameStart(List<Dimension> fieldDims);
+    void gameStart();
 
     /**
-     * Adds player to the game and sends {@link Packet.Codes#GAME_START} to that player
+     * Adds player to the game and sends {@link Packet.Codes#GAME_SETUP} to that player
      *
      * @param player   which player to add
      * @param fieldDim used to generate background image

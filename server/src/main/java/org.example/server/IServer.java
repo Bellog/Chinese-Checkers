@@ -15,6 +15,8 @@ public interface IServer {
      */
     void handlePacket(String playerId, Packet packet);
 
+    void setGameHandler(IGameHandler handler);
+
     /**
      * Forwards packet to player with supplied playerId
      *

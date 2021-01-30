@@ -6,7 +6,7 @@ import org.example.connection.Packet;
 import org.example.server.replay.GameSaveRepository;
 import org.example.server.web.WebSocketController;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.annotation.Transient;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 /**
@@ -16,25 +16,25 @@ import org.springframework.stereotype.Component;
  * <p></p> Main method inside uses cli to choose a game mode and starts server.
  */
 @Component
+@Profile("normal")
 public class Server implements IServer {
 
-    @Transient
-    private final GameSaveRepository repository;
-    private volatile WebSocketController conn;
-    private volatile IGameHandler gameHandler;
+    protected GameSaveRepository repository;
+    protected volatile WebSocketController conn;
+    protected volatile IGameHandler gameHandler;
     /**
      * if player starts with 'null' then it is not assigned
      */
-    private volatile BiMap<Integer, String> playerMap;
+    protected volatile BiMap<Integer, String> playerMap;
     /**
      * If game is running then app_info code's handling should be different, see handlePacket() method for more information.
      */
-    private volatile boolean gameStarted = false;
-    private volatile boolean gameRunning = false;
-    private volatile boolean initialized = false;
+    protected volatile boolean gameStarted = false;
+    protected volatile boolean gameRunning = false;
+    protected volatile boolean initialized = false;
 
     @Autowired
-    public Server(GameSaveRepository repository) {
+    public void setRepository(GameSaveRepository repository) {
         this.repository = repository;
     }
 
@@ -43,6 +43,7 @@ public class Server implements IServer {
         this.conn = conn;
     }
 
+    @Override
     public void setGameHandler(IGameHandler handler) {
         this.gameHandler = handler;
         playerMap = HashBiMap.create();
@@ -54,7 +55,6 @@ public class Server implements IServer {
     @Override
     public synchronized void handlePacket(String playerId, Packet packet) {
         if (!initialized) return;
-        System.out.println("Packet");
         switch (packet.getCode()) {
             case DISCONNECT -> {
                 int player;
@@ -73,7 +73,6 @@ public class Server implements IServer {
                         .message("Player " + player + " disconnected, pausing the game.").build());
             }
             case CONNECT -> {
-                System.out.println("new player");
                 if (addPlayer(playerId)) {
                     int player = playerMap.inverse().get(playerId);
                     System.out.println("new player added as player " + player);
@@ -125,6 +124,7 @@ public class Server implements IServer {
             if (!gameRunning) {
                 gameStarted = true; // this will happen only once when all players are connected
                 gameRunning = true;
+                gameHandler.gameStart();
                 System.out.println("The game has started");
             } else {
                 System.out.println("The game has resumed");

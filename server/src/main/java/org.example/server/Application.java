@@ -1,10 +1,10 @@
-package org.example;
+package org.example.server;
 
-import org.example.server.GameHandler;
-import org.example.server.Server;
 import org.example.server.gameModes.AvailableGameModes;
 import org.example.server.replay.GameSave;
 import org.example.server.replay.GameSaveRepository;
+import org.example.server.replay.ReplayGameHandler;
+import org.example.server.replay.ReplayServer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
@@ -12,11 +12,18 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
+import java.util.List;
 import java.util.Scanner;
+import java.util.stream.Collectors;
 
+/**
+ * To run this application you need to execute it with profile, see resources folder for available profiles
+ */
 @SpringBootApplication
 @EnableJpaRepositories
+@EnableScheduling
 public class Application {
 
     private ApplicationContext context;
@@ -33,44 +40,44 @@ public class Application {
     @Bean
     public CommandLineRunner start(GameSaveRepository repository) {
         return args -> {
-            var sc = new Scanner(System.in);
-            System.out.println("'s' to start new game, or 'r' to start replay");
-            switch (sc.next()) {
-                case "s" -> startServer(sc);
-                case "r" -> startReplay(repository, sc);
-                case "exit" -> System.exit(0);
+            if (context.getBean(IServer.class) instanceof ReplayServer) {
+                startReplay(repository, new Scanner(System.in));
+            } else {
+                startServer();
             }
         };
     }
 
     private void startReplay(GameSaveRepository repository, Scanner sc) {
-//        List<Integer> ids = repository.getAllIds();
-//        System.out.println("Available game ids: " +
-//                           ids.stream().map(String::valueOf).collect(Collectors.joining(", ")));
-//
-//        int id = sc.nextInt();
-//        if (!ids.contains(id)) {
-//            System.out.println("Wrong id");
-//            System.exit(0);
-//        }
-//        GameSave save = repository.findById(id).orElse(null);
-//        if (save == null) {
-//            System.out.println("Error getting data from database");
-//            System.exit(0);
-//        }
-//
-//        System.out.println("You have selected: " + save.getMode().name() + " for " + save.getPlayers() + " players (" +
-//                           save.getMoves().size() + " moves)");
-//
-//        new Thread(() -> {
-//            var replay = new Replay(save);
-//            System.out.println("Replay started, close application to stop");
-//            replay.initGame();
-//        }).start();
-//        startClient();
+        List<Integer> ids = repository.getAllIds();
+        System.out.println("Available game ids: " +
+                           ids.stream().map(String::valueOf).collect(Collectors.joining(", ")));
+
+        int id = sc.nextInt();
+        if (!ids.contains(id)) {
+            System.out.println("Wrong id");
+            System.exit(0);
+        }
+        GameSave save = repository.findById(id).orElse(null);
+        if (save == null) {
+            System.out.println("Error getting data from database");
+            System.exit(0);
+        }
+
+        System.out.println("You have selected: " + save.getMode().name() + " for " + save.getPlayers() + " players (" +
+                           save.getMoves().size() + " moves)");
+
+        new Thread(() -> {
+            var server = context.getBean(ReplayServer.class);
+            var mode = AvailableGameModes.getGameMode(save.getMode(), save.getPlayers());
+            server.setGameHandler(new ReplayGameHandler(mode, server));
+            server.setReplay(save);
+            System.out.println("Join the game with a client to start replay");
+        }).start();
     }
 
-    private void startServer(Scanner sc) {
+    private void startServer() {
+        var sc = new Scanner(System.in);
         System.out.println("Please choose one of available game modes:");
         for (int i = 0; i < AvailableGameModes.GameModes.values().length; i++) {
             System.out.println("\t" + i + ": " + AvailableGameModes.GameModes.values()[i].name());

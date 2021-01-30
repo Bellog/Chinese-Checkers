@@ -41,7 +41,7 @@ public class ReplayGameHandler implements IGameHandler {
         switch (packet.getCode()) {
             case TURN_MOVE -> {
                 if (game.move(packet.getStartPos(), packet.getEndPos())) {
-                    server.sendToPlayer(-1, new Packet.PacketBuilder().code(Packet.Codes.BOARD_UPDATE)
+                    server.sendToPlayer(0, new Packet.PacketBuilder().code(Packet.Codes.BOARD_UPDATE)
                             .board(game.getBoard()).message("Player " + (player + 1) + " moved").build());
                     checkWinners();
                 }
@@ -64,12 +64,12 @@ public class ReplayGameHandler implements IGameHandler {
             }
 
             winners = newWinners;
-            server.sendToPlayer(-1, new Packet.PacketBuilder().code(Packet.Codes.PLAYER_UPDATE)
+            server.sendToPlayer(0, new Packet.PacketBuilder().code(Packet.Codes.PLAYER_UPDATE)
                     .playerInfo(generatePlayerInfo())
                     .message("Player " + (player + 1) + " has won " + newWinners.get(player) + ". place!")
                     .build());
             if (newWinners.get(player) == game.getNumberOfPlayers() - 1) {
-                server.sendToPlayer(-1, new Packet.PacketBuilder()
+                server.sendToPlayer(0, new Packet.PacketBuilder()
                         .code(Packet.Codes.GAME_END).message("The game has ended!").build());
                 server.stop();
             }
@@ -82,23 +82,20 @@ public class ReplayGameHandler implements IGameHandler {
     }
 
     @Override
-    public void gameStart(List<Dimension> fieldDims) {
-        server.sendToPlayer(-1, new Packet.PacketBuilder()
-                .code(Packet.Codes.GAME_START).colors(game.getColorScheme())
-                .board(game.getBoard())
-                .playerId(0)
-                .image(game.getBoardBackground(fieldDims.get(0)))
-                .playerInfo(generatePlayerInfo())
-                .message("You have connected to game replay, you will not be able to perform any actions")
-                .build());
-
-        server.sendToPlayer(-1, new Packet.PacketBuilder()
-                .code(Packet.Codes.TURN_END).build()); // end turn disables actions on client
+    public void gameStart() {
+        // does nothing
     }
 
     @Override
     public void joinPlayer(int player, Dimension fieldDim) {
-        // ignored
+        server.sendToPlayer(0, new Packet.PacketBuilder()
+                .code(Packet.Codes.GAME_SETUP).colors(game.getColorScheme())
+                .board(game.getBoard())
+                .playerId(0)
+                .image(game.getBoardBackground(fieldDim))
+                .playerInfo(generatePlayerInfo())
+                .message("You have connected to game replay, you will not be able to perform any actions")
+                .build());
     }
 
     private List<List<String>> generatePlayerInfo() {

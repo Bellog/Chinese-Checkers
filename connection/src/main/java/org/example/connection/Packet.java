@@ -178,7 +178,7 @@ public class Packet implements Serializable {
          *     <li>image</li>
          * </ul>
          */
-        GAME_START,
+        GAME_SETUP,
         /**
          * Server sends this to tell client that the game has ended
          */

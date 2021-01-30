@@ -1,66 +1,90 @@
 package org.example.server.replay;
 
-import org.apache.maven.model.Model;
-import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
-import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
+import com.google.common.collect.HashBiMap;
 import org.example.connection.Packet;
-import org.example.server.IServer;
-import org.example.server.IServerConnection;
+import org.example.server.IGameHandler;
+import org.example.server.Server;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Profile;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.scheduling.annotation.ScheduledAnnotationBeanPostProcessor;
+import org.springframework.stereotype.Component;
 
-import java.awt.*;
-import java.io.FileReader;
-import java.io.IOException;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.Queue;
+import java.util.concurrent.LinkedBlockingQueue;
 
-public class ReplayServer implements IServer {
+@Component
+@Profile("replay")
+public class ReplayServer extends Server {
 
-    private final String version;
-    private final AtomicReference<Dimension> fieldDims = new AtomicReference<>(null);
-    private volatile IServerConnection conn;
-    private volatile org.example.server.IGameHandler gameHandler;
+    private final ApplicationContext context;
+    private volatile Queue<Move> moveQueue;
+    private volatile int currentPlayer;
 
-    public ReplayServer() {
-        String version = null;
-
-        try {
-            MavenXpp3Reader reader = new MavenXpp3Reader();
-            Model model = reader.read(new FileReader("pom.xml"));
-            version = model.getVersion();
-            if (version == null)
-                throw new IOException();
-        } catch (IOException | XmlPullParserException e) {
-            System.out.println("Could not get program version");
-            System.exit(1);
-        }
-        this.version = version;
-    }
-
-    public void handlePacket(int playerId, Packet packet) {
-        switch (packet.getCode()) {
-            case DISCONNECT -> {
-                System.out.println("Lost connection to the client");
-                stop();
-            }
-            case CONNECT -> {
-                if (fieldDims.get() == null) {
-                    fieldDims.set(packet.getFieldDim());
-                    gameHandler.gameStart(List.of(packet.getFieldDim()));
-                }
-            }
-            default -> gameHandler.handleInput(playerId, packet);
-        }
+    @Autowired
+    public ReplayServer(ApplicationContext context) {
+        this.context = context;
     }
 
     @Override
-    public void handlePacket(String playerId, Packet packet) {
+    public void setGameHandler(IGameHandler handler) {
+        gameHandler = handler;
+        playerMap = HashBiMap.create();
+        playerMap.put(0, "null0");
+        if (moveQueue != null) // initialization requires both handler and replay
+            initialized = true;
+    }
 
+    public void setReplay(GameSave replay) {
+        currentPlayer = replay.getMoves().get(0).getPlayer();
+        this.moveQueue = new LinkedBlockingQueue<>(replay.getMoves());
+        if (gameHandler != null) // initialization requires both handler and replay
+            initialized = true;
+    }
+
+    @Override
+    public synchronized void handlePacket(String playerId, Packet packet) {
+        if (!initialized) return;
+        switch (packet.getCode()) {
+            case DISCONNECT, CONNECT -> super.handlePacket(playerId, packet);
+            default -> {
+
+            }
+        }
+    }
+
+    @Scheduled(fixedRate = 1500)
+    @Bean("replay-exec")
+    private void action() {
+        if (!gameRunning)
+            return;
+        Move move = moveQueue.poll();
+        if (move == null) {
+            sendToPlayer(0, new Packet.PacketBuilder()
+                    .code(Packet.Codes.GAME_END).playerId(currentPlayer).message("Replay has ended").build());
+            ScheduledAnnotationBeanPostProcessor bean = context.getBean(ScheduledAnnotationBeanPostProcessor.class);
+            bean.postProcessBeforeDestruction(this, "replay-exec");
+            stop();
+            return;
+        }
+
+        if (currentPlayer != move.getPlayer()) {
+            gameHandler.handleInput(currentPlayer, new Packet.PacketBuilder()
+                    .code(Packet.Codes.TURN_END).playerId(currentPlayer).build());
+            currentPlayer = move.getPlayer();
+        }
+
+        gameHandler.handleInput(currentPlayer, new Packet.PacketBuilder()
+                .code(Packet.Codes.TURN_MOVE).playerId(currentPlayer)
+                .startPos(move.getStart()).endPos(move.getEnd()).build());
     }
 
     @Override
     public void sendToPlayer(int player, Packet packet) {
-        if (player == -1)
-            conn.sendToPlayer(player, packet);
+        if (player == 0)
+            super.sendToPlayer(player, packet);
     }
 
     @Override
@@ -74,12 +98,5 @@ public class ReplayServer implements IServer {
             }
             System.exit(0);
         });
-    }
-
-    public void init(org.example.server.IGameHandler handler, IServerConnection conn) {
-        this.gameHandler = handler;
-        this.conn = conn;
-
-        conn.addPlayer();
     }
 }

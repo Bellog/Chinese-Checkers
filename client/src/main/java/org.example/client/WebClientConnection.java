@@ -70,7 +70,6 @@ public class WebClientConnection implements IClientConnection {
         @Override
         public void handleFrame(@NonNull StompHeaders headers, Object payload) {
             if ((payload instanceof Packet)) {
-                System.out.println(((Packet) payload).getCode());
                 client.handlePacket((Packet) payload);
             } else
                 System.out.println("frame error");
@@ -87,16 +86,14 @@ public class WebClientConnection implements IClientConnection {
         @Override
         public void handleException(@NonNull StompSession session, StompCommand command,
                                     @NonNull StompHeaders headers, @NonNull byte[] payload, Throwable exception) {
-            exception.printStackTrace();
-//            client.handlePacket(new Packet.PacketBuilder().code(Packet.Codes.INFO)
-//                    .message("Connection error: " + exception.getMessage()).build());
+            client.handlePacket(new Packet.PacketBuilder().code(Packet.Codes.INFO)
+                    .message("Connection error: " + exception.getMessage()).build());
         }
 
         @Override
         public void handleTransportError(@NonNull StompSession session, Throwable exception) {
-            exception.printStackTrace();
-//            client.handlePacket(new Packet.PacketBuilder().code(Packet.Codes.INFO)
-//                    .message("transport error: " + exception.getMessage()).build());
+            client.handlePacket(new Packet.PacketBuilder().code(Packet.Codes.INFO)
+                    .message("transport error: " + exception.getMessage()).build());
         }
 
         public void send(Packet packet) {
