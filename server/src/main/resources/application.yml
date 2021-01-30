@@ -1,0 +1,13 @@
+---
+spring:
+  main:
+    web-application-type: servlet
+  jpa:
+    generate-ddl: true
+  jooq:
+    sql-dialect: org.hibernate.dialect.MariaDB103Dialect
+  datasource:
+    driver-class-name: org.mariadb.jdbc.Driver
+    url: OVERWRITE_ME_IN_EXTERNAL_SOURCE
+    username: OVERWRITE_ME_IN_EXTERNAL_SOURCE
+    password: OVERWRITE_ME_IN_EXTERNAL_SOURCE
