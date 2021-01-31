@@ -9,6 +9,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
+import java.util.concurrent.locks.ReentrantLock;
+
 /**
  * Server class that acts as a mediator between gameHandler and ServerConnection classes.
  * <br> It also has logic around handling players' disconnections and reconnections.
@@ -18,6 +20,8 @@ import org.springframework.stereotype.Component;
 @Component
 @Profile("normal")
 public class Server implements IServer {
+
+    private final ReentrantLock LOCK = new ReentrantLock();
 
     protected GameSaveRepository repository;
     protected volatile WebSocketController conn;
@@ -53,7 +57,8 @@ public class Server implements IServer {
     }
 
     @Override
-    public synchronized void handlePacket(String playerId, Packet packet) {
+    public void handlePacket(String playerId, Packet packet) {
+        LOCK.lock();
         if (!initialized) return;
         switch (packet.getCode()) {
             case DISCONNECT -> {
@@ -63,6 +68,7 @@ public class Server implements IServer {
                 } catch (NullPointerException e) {
                     // a client may disconnect before getting their id assigned that means that they were not
                     // added to the game by the server - no action is required
+                    LOCK.unlock();
                     return;
                 }
                 System.out.println("Lost connection to player " + player + ", pausing the game");
@@ -75,7 +81,6 @@ public class Server implements IServer {
             case CONNECT -> {
                 if (addPlayer(playerId)) {
                     int player = playerMap.inverse().get(playerId);
-                    System.out.println("new player added as player " + player);
                     gameHandler.joinPlayer(player, packet.getFieldDim());
                 } else {
                     System.out.println("could not add new player");
@@ -88,6 +93,7 @@ public class Server implements IServer {
                     gameHandler.handleInput(player, packet);
             }
         }
+        LOCK.unlock();
     }
 
     @Override
@@ -100,11 +106,6 @@ public class Server implements IServer {
         for (int i = 0; i < gameHandler.getNumberOfPlayers(); i++)
             if (i != exceptPlayer)
                 sendToPlayer(i, packet);
-    }
-
-    public void sendToAll(Packet packet) {
-        for (int i = 0; i < gameHandler.getNumberOfPlayers(); i++)
-            sendToPlayer(i, packet);
     }
 
     private boolean addPlayer(String playerId) {
@@ -126,27 +127,24 @@ public class Server implements IServer {
                 gameRunning = true;
                 gameHandler.gameStart();
                 System.out.println("The game has started");
+                sendToPlayer(player, new Packet.PacketBuilder().code(Packet.Codes.INFO)
+                        .message("All players have joined, starting the game.").build());
             } else {
                 System.out.println("The game has resumed");
+                sendToAllExcept(player, new Packet.PacketBuilder().code(Packet.Codes.GAME_RESUME)
+                        .message("All players have reconnected, resuming the game.").build());
                 gameRunning = true;
             }
-        }
-
-        if (!gameRunning)
-            sendToPlayer(player, new Packet.PacketBuilder().code(Packet.Codes.INFO)
-                    .message("The game is currently paused").build());
-
-        if (gameStarted) {
-            int finalPlayer = player;
-            new Thread(() -> {
-                sendToAllExcept(finalPlayer, new Packet.PacketBuilder().code(Packet.Codes.INFO)
-                        .message("Player " + finalPlayer + " has reconnected.").build());
-
-                if (gameRunning) {
-                    sendToAllExcept(finalPlayer, new Packet.PacketBuilder().code(Packet.Codes.GAME_RESUME)
-                            .message("All players have reconnected, resuming the game.").build());
-                }
-            }).start();
+        } else {
+            if (gameStarted) {
+                sendToAllExcept(player, new Packet.PacketBuilder().code(Packet.Codes.INFO)
+                        .message("Player " + player + " has reconnected.").build());
+                System.out.println("Player " + player + " has reconnected.");
+            } else {
+                sendToAllExcept(player, new Packet.PacketBuilder().code(Packet.Codes.INFO)
+                        .message("Player " + player + " has joined.").build());
+                System.out.println("Player " + player + " has joined.");
+            }
         }
 
         return true;

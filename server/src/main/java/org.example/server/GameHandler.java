@@ -49,16 +49,16 @@ public class GameHandler implements IGameHandler {
         if (player != currentPlayer) {
             server.sendToPlayer(player, new Packet.PacketBuilder().code(Packet.Codes.INFO)
                     .message("It's not your turn!").build());
+            LOCK.unlock();
             return;
         } else if (winners.get(player) != null) {
+            LOCK.unlock();
             return; // the player is a winner and should not be able to do anything
         }
 
         switch (packet.getCode()) {
             case TURN_MOVE -> {
                 if (move(packet.getStartPos(), packet.getEndPos())) {
-                    System.out.println("Player " + (currentPlayer + 1) + " moved: " +
-                                       packet.getStartPos().toString() + " -> " + packet.getEndPos().toString());
                     save.addMove(packet.getStartPos(), packet.getEndPos(), currentPlayer);
                     for (int i = 0; i < game.getNumberOfPlayers(); i++)
                         server.sendToPlayer(i, new Packet.PacketBuilder().code(Packet.Codes.BOARD_UPDATE)
@@ -141,6 +141,7 @@ public class GameHandler implements IGameHandler {
         server.sendToPlayer(currentPlayer, new Packet.PacketBuilder().code(Packet.Codes.TURN_END).build());
         do {
             currentPlayer = (currentPlayer + 1) % game.getNumberOfPlayers();
+            System.out.println("current player:" + currentPlayer);
         } while (winners.get(currentPlayer) != null);
         //if winners[i] != null, then that player is a winner, they should not be able to play any more turns
         game.endTurn();

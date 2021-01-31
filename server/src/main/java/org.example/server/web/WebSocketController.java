@@ -30,7 +30,7 @@ public class WebSocketController {
         server.handlePacket(principal.getName(), packet);
     }
 
-    public void sendToPlayer(String playerId, Packet packet) {
+    public synchronized void sendToPlayer(String playerId, Packet packet) {
         template.convertAndSendToUser(playerId, "/queue/game", packet);
     }
 
