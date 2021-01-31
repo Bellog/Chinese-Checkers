@@ -13,3 +13,8 @@ spring:
     password: OVERWRITE_ME_IN_EXTERNAL_SOURCE
   profiles:
     active: normal
+  web:
+    resources:
+      static-locations:
+        - file:./src/main/resources/static/
+        - classpath:/static/

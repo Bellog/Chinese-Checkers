@@ -94,6 +94,7 @@ public class Packet implements Serializable {
      *
      * @return color scheme list
      */
+    @JsonSerialize(contentUsing = ColorSerializer.class)
     public List<Color> getColors() {
         return colors;
     }
@@ -271,6 +272,7 @@ public class Packet implements Serializable {
             return this;
         }
 
+        @JsonDeserialize(contentUsing = ColorDeserializer.class)
         public PacketBuilder colors(List<Color> colors) {
             this.colors = colors;
             return this;
