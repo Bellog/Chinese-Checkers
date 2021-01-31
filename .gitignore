@@ -220,3 +220,6 @@ buildNumber.properties
 
 # End of https://www.toptal.com/developers/gitignore/api/java,maven,intellij,eclipse
 /Sternhalma.iml
+/server/server.iml
+/connection/connection.iml
+/client/client.iml
