@@ -3,7 +3,7 @@ body {
 }
 
 #main-content {
-    max-width: 1280px;
+    width: 1280px;
     padding: 2em 3em;
     margin: 0 auto 20px;
     background-color: #fff;
@@ -13,31 +13,45 @@ body {
     border-radius: 5px;
 }
 
-textarea {
-    resize: none;
-}
-
 .row {
     min-height: 25px;
 }
 
-table td {
+#game_table td {
     width: 28px;
     height: 48px;
     text-align: center;
     vertical-align: middle;
     background-color: #cccccc;
     /*opacity: 0.5;*/
-    border: 1px solid #fff;
-}
-
-th, td {
     padding: 0;
 }
 
-table {
+#game_table {
+    margin: 0 auto;
     border-collapse: collapse;
     border-spacing: 0;
+}
+
+#logs {
+    /*margin: 0 auto;*/
+}
+
+#player_info {
+    margin: auto;
+    table-layout: fixed;
+}
+
+#player_info td {
+    text-align: center;
+    padding: 5px;
+    border: 1px solid #cccccc;
+    font-family: "Arial Black", serif;
+    font-weight: bold;
+}
+
+textarea {
+    resize: none;
 }
 
 table td.highlighted {

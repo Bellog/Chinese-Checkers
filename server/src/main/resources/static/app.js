@@ -1,7 +1,8 @@
 let stompClient = null;
 let board = [];
+let playerId;
 
-function connect() {
+$(function () {
     stompClient = Stomp.client("ws://localhost:8080/sternhalma")
     stompClient.connect({}, function (frame) {
         console.log("Connected: " + frame);
@@ -14,6 +15,15 @@ function connect() {
             .build();
         sendPacket(packet);
     });
+    $("#disconnect").click(function () {
+        disconnect()
+        $(this).prop("disabled", true);
+    });
+});
+
+function setButtons(enabled) {
+    $("#rollback").prop("disabled", !enabled);
+    $("#end_turn").prop("disabled", !enabled);
 }
 
 function disconnect() {
@@ -32,68 +42,107 @@ function handlePacket(packet) {
         case "GAME_SETUP":
             gameSetup(packet);
             break;
+        case "TURN_START":
+        case "GAME_RESUME" :
+            setButtons(true);
+            break;
+        case "TURN_END":
+        case "GAME_PAUSE":
+        case "DISCONNECT":
+        case "GAME_END":
+            setButtons(false);
+            break;
+        case "BOARD_UPDATE":
+            break;
+        case "PLAYER_UPDATE":
+            updatePlayerInfo(packet, packet.colors);
+            break;
     }
     if (packet.message !== null) {
-        console.log(packet.message);
+        log(packet.message);
     }
+}
+
+function log(message) {
+    let logs = $("#logs");
+    let text = logs.text();
+    let out = message + "\n" + text;
+    logs.text(out);
+
+}
+
+function updatePlayerInfo(playerInfo, colors) {
+    let table = $("#player_info");
+    table.empty();
+
+    generatePlayerInfoRow(table, playerInfo[0], 0x000000);
+    for (let i = 1; i < playerInfo.length; i++) {
+        generatePlayerInfoRow(table, playerInfo[i], colors[i - 1]);
+    }
+}
+
+function generatePlayerInfoRow(table, data, color) {
+    let row = "<tr>";
+    row += "<td style='color: " + getHexColor(color) + ";'>" + data[0] + "</td>";
+    row += "<td style='color: " + getHexColor(color) + "'>" + data[1] + "</td>";
+    row += "</tr>";
+    table.append(row);
+}
+
+function getHexColor(number) {
+    return "#" + ((number) >>> 0).toString(16).slice(-6);
 }
 
 function gameSetup(packet) {
     let table = $("#game_table");
     board = packet.board;
-
+    playerId = packet.playerId;
+    updatePlayerInfo(packet.playerInfo, packet.colors);
     gameSetupTable(table);
-
-    // change logs height
-    $("#logs").css("height", table.css("height"));
 }
 
 function gameSetupTable(table) {
-    let row = "<tr>";
+    let tb = "";
     table.empty();
-    for (let i = 0; i < board[0].length; i++) {
-        row += "<td></td>";
+    // TODO remove if, visibility for now
+    for (let y = 0; y < board.length; y++) {
+        tb += "<tr>";
+        for (let x = 0; x < board[0].length; x++) {
+            if (board[y][x] !== null) {
+                tb += "<td>x</td>";
+            } else {
+                tb += "<td></td>";
+            }
+        }
+        tb += "</tr>";
     }
-    row += "</tr>";
-    for (let i = 0; i < board.length; i++) {
-        table.append(row);
-    }
+
+    table.append(tb);
+    mouseListener();
 }
 
-$(function () {
-    $("#connect").click(function () {
-        connect();
-    });
-    $("#disconnect").click(function () {
-        disconnect()
-    });
-});
-
-$(function () {
+let mouseListener = function () {
     let begin;
     $("#game_table td")
         .mousedown(function () {
             begin = this;
-
-            if (board[this.parentNode.rowIndex][this.cellIndex] === -1) {
-                begin = null;
+            if (board[this.parentNode.rowIndex][this.cellIndex] === playerId) {
+                $(this).addClass("highlighted");
                 return false;
             }
-
-            $(this).addClass("highlighted");
+            begin = null;
             return false; // prevent text selection
-        })
-        .bind("selectstart", function () {
-            return false; // block text selection (I think)
         })
         .mouseup(function () {
             $(begin).removeClass("highlighted");
-            if (begin == null || board[this.parentNode.rowIndex - 1][this.cellIndex] === -1)
-                return;
-            let packet = new PacketBuilder().code("CODE_INFO").build();
-            //alert("(" + begin.cellIndex + ", " + begin.parentNode.rowIndex + ") -> (" + this.cellIndex + ", " + this.parentNode.rowIndex + ")");
+            if (begin == null || board[this.parentNode.rowIndex][this.cellIndex] === -1) {
+                console.log("move");
+                let packet = new PacketBuilder().code("CODE_INFO").build();
+
+            }
         })
-});
+};
+
 
 class FieldDim {
     constructor(width, height) {
@@ -301,4 +350,3 @@ class PacketBuilder {
         return new Packet(this);
     }
 }
-

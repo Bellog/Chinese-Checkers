@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pl">
+<html lang="en">
 <head>
     <title>Hello WebSocket</title>
     <link href="/webjars/bootstrap/css/bootstrap.min.css" rel="stylesheet">
@@ -16,23 +16,34 @@
 <div class="container" id="main-content">
     <div class="row">
         &nbsp;&nbsp;&nbsp;
-        <button id="connect">connect</button>
         <button id="end_turn">end turn</button>
         <button id="rollback">reset turn</button>
         <button id="disconnect">disconnect</button>
     </div>
     <div class="row">
-
+        <!--        empty space between top and bottom-->
     </div>
-
     <div class="row">
-        <div class="col-sm-5">
-            <label for="logs"></label><textarea cols="50" id="logs" rows="10"></textarea>
+        <div class="col-sm-4">
+            <table id="player_info">
+                <tr>
+                    <td>player 1 (You)</td>
+                    <td>Pos</td>
+                </tr>
+                <tr>
+                    <td>player 1 (You)</td>
+                    <td>Pos</td>
+                </tr>
+                <tr>
+                    <td>player 1 (You)</td>
+                    <td>Pos</td>
+                </tr>
+            </table>
+            <label for="logs"></label>
+            <textarea cols="57" id="logs" rows="30"></textarea>
         </div>
-        <div class="col-">
+        <div class="col-xl-5">
             <table id="game_table">
-
-
                 <tr>
                     <td></td>
                     <td></td>
