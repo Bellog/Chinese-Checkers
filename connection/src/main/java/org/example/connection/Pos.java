@@ -7,9 +7,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.Serializable;
 
 /**
- * Stores 2 integer values.
- * TODO
- * Pair class makes it easier to send such values.
+ * Stores 2 integer values: x and y.
  */
 public final class Pos implements Serializable {
     @JsonIgnore
@@ -33,6 +31,13 @@ public final class Pos implements Serializable {
 
         if (x != pos.x) return false;
         return y == pos.y;
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 17;
+        hash = hash * 31 + x;
+        return hash * 31 + y;
     }
 
     @Override
