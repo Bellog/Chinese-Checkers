@@ -154,6 +154,9 @@ public class Server implements IServer {
     public void stop() {
         System.out.println("Stopping the server");
         new Thread(() -> {
+            sendToAllExcept(-1, new Packet.PacketBuilder().code(Packet.Codes.GAME_END)
+                    .message("The game has ended").build());
+            gameRunning = false;
             var save = gameHandler.getSave();
             System.out.println("SAVE: " + save.getMode().name() + " for " + save.getPlayers() + " players (" +
                                save.getMoves().size() + " moves)");

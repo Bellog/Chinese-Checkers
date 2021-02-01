@@ -73,6 +73,7 @@ public class Application {
             server.setGameHandler(new ReplayGameHandler(mode, server));
             server.setReplay(save);
             System.out.println("Join the game with a client to start replay");
+            exitHandler(sc, server);
         }).start();
     }
 
@@ -112,6 +113,10 @@ public class Application {
         server.setGameHandler(new GameHandler(game, server, save));
         System.out.println("Server started");
 
+        exitHandler(sc, server);
+    }
+
+    private void exitHandler(Scanner sc, Server server) {
         new Thread(() -> { // wait until user types 'exit' then stop server
             while (sc.hasNext()) {
                 if (sc.next().equals("exit")) {
