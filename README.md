@@ -57,7 +57,7 @@ Instructions to run server are shown in the command line interface.
 
 - Basic game mode - for testing purposes, All moves are prohibited, player wins when any of their pawns is in another player's base.
 - Standard game mode - standard rules for chinese checkers apply.
- 
-# 4 Tests
 
-You can see test coverage using 'gradle jacocoaggregatedreport' and navigating to /build/reports/jacoco/jacocoArggregatedReport/
+# 4. License
+
+This project is licensed under GPLv3 license - see [LiCENSE](https://github.com/Bellog/Chinese-Checkers/blob/main/LICENSE)
