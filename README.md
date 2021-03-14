@@ -1,14 +1,13 @@
 # Chinese-Checkers
 
 Chinese checkers game with java and web interfaces.
-
-This game was a univeristy project, done in pairs.
+The program was originally a group project at my university.
 
 # 1 Technologies
 
 Project uses java 15, spring boot 2.4.2 with Tomcat, Stomp over Websocket for client-server connection.
 
-Java client interface is written in swing, web interface is written in JQuery.
+Java client interface is written in swing, web interface is written using html 5, css and JavaScript with JQuery.
 
 # 2 Setup
 
